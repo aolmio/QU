@@ -324,7 +324,9 @@
           <!-- Generated QR / Stego Display -->
           <div id="qr-result-container" class="hidden w-full flex flex-col items-center space-y-4">
             <div class="relative p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-xs inline-block max-w-full">
-              <canvas id="generated-qr-canvas" class="rounded-lg max-w-full max-h-72 w-auto h-auto mx-auto"></canvas>
+              <canvas id="generated-qr-canvas" class="hidden"></canvas>
+              <img id="generated-qr-img" alt="Generated ReceiptSeal PNG" class="rounded-lg max-w-full max-h-72 w-auto h-auto mx-auto select-all" />
+              <p class="text-[11px] text-slate-400 mt-1.5">Tip: On iPhone/iPad, tap <strong>Save / Share PNG</strong> or press &amp; hold the image above</p>
               <span id="stego-active-pill" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
                 Stealth LSB Payload Embedded • Lossless PNG
               </span>
@@ -335,7 +337,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span id="btn-download-seal-text">Download PNG</span>
+                <span id="btn-download-seal-text">Download / Save PNG</span>
               </button>
               <button type="button" onclick="copyGeneratedPayload()" class="flex-1 min-w-[140px] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -738,11 +740,12 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-          <!-- Reconstructed QR Canvas -->
+          <!-- Reconstructed QR Canvas & Long-Press Image -->
           <div class="sm:col-span-5 flex flex-col items-center p-3 bg-slate-50 border border-slate-200 rounded-xl">
-            <canvas id="modal-qr-canvas" class="rounded-lg max-w-full h-auto"></canvas>
+            <canvas id="modal-qr-canvas" class="hidden"></canvas>
+            <img id="modal-qr-img" alt="Saved Receipt QR Code" class="rounded-lg max-w-full h-auto" />
             <button type="button" onclick="downloadModalQR()" class="mt-2.5 w-full py-2 px-3 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 transition">
-              Download QR PNG
+              Save / Share QR PNG
             </button>
           </div>
 
@@ -801,6 +804,46 @@
         <button type="button" onclick="closeVaultModal()" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
           Close
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: iOS / MOBILE LONG-PRESS SAVE IMAGE OVERLAY                     -->
+  <!-- ===================================================================== -->
+  <div id="ios-save-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden my-6">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Save Image on iOS / Mobile</h3>
+          <p id="ios-save-filename" class="text-[11px] font-mono text-slate-500 mt-0.5">ReceiptSeal.png</p>
+        </div>
+        <button type="button" onclick="closeIosSaveModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-center">
+        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-left text-xs text-indigo-950 space-y-1">
+          <p class="font-bold">How to save lossless PNG on iPhone / iPad:</p>
+          <p>1. <strong>Press and hold</strong> the image below for 1 second.</p>
+          <p>2. Tap <strong>"Save to Photos"</strong> or <strong>"Share → Save to Files"</strong>.</p>
+        </div>
+
+        <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl inline-block max-w-full">
+          <img id="ios-save-preview-img" alt="Press and hold to save PNG" class="rounded-lg max-h-72 w-auto h-auto mx-auto shadow-xs" />
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 pt-1">
+          <button type="button" id="ios-open-tab-btn" class="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition">
+            Open Image in New Tab
+          </button>
+          <button type="button" onclick="closeIosSaveModal()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition">
+            Done
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2097,7 +2140,13 @@
             },
           });
           stegoPill.classList.add('hidden');
-          dlBtnText.textContent = 'Download QR PNG';
+          dlBtnText.textContent = 'Download / Save QR PNG';
+        }
+
+        // Sync hidden canvas to a real <img> element so iOS Safari users can also long-press directly
+        const previewImg = document.getElementById('generated-qr-img');
+        if (previewImg) {
+          previewImg.src = canvas.toDataURL('image/png');
         }
 
         document.getElementById('qr-empty-state').classList.add('hidden');
@@ -2121,15 +2170,112 @@
       }
     }
 
-    function downloadGeneratedQR() {
+    function isIOSDevice() {
+      const ua = navigator.userAgent || '';
+      return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function canvasToPngBlob(canvas) {
+      return new Promise((resolve) => {
+        if (canvas.toBlob) {
+          canvas.toBlob((blob) => {
+            if (blob) return resolve(blob);
+            resolve(dataUrlToBlob(canvas.toDataURL('image/png')));
+          }, 'image/png');
+        } else {
+          resolve(dataUrlToBlob(canvas.toDataURL('image/png')));
+        }
+      });
+    }
+
+    function dataUrlToBlob(dataUrl) {
+      const parts = dataUrl.split(',');
+      const mime = parts[0].match(/:(.*?);/)[1] || 'image/png';
+      const bstr = atob(parts[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    }
+
+    /**
+     * Multi-tier PNG save helper compatible with iOS Safari, iPadOS, Android, and Desktop browsers.
+     */
+    async function saveCanvasAsPngCrossPlatform(canvas, filename) {
+      if (!canvas) return;
+      const dataUrl = canvas.toDataURL('image/png');
+      const blob = await canvasToPngBlob(canvas);
+      const isIOS = isIOSDevice();
+
+      // Tier 1: On iOS/iPadOS or mobile devices, try native Web Share API with PNG File
+      // so user gets "Save Image" (Apple Photos) and "Save to Files" directly
+      if (isIOS && navigator.share && navigator.canShare) {
+        try {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: filename,
+            });
+            showToast('Opened iOS Share Sheet — tap "Save Image" or "Save to Files".', 'success');
+            return;
+          }
+        } catch (err) {
+          // User cancelled share sheet -> exit quietly
+          if (err && err.name === 'AbortError') return;
+          console.warn('Web Share API unavailable or blocked in WebView, falling back to iOS image modal:', err);
+        }
+      }
+
+      // Tier 2: On iOS/iPadOS when Web Share is blocked (e.g., sandboxed iframe/in-app browser),
+      // show a dedicated modal with a real <img> element for long-press "Save to Photos"
+      if (isIOS) {
+        openIosSaveModal(dataUrl, blob, filename);
+        return;
+      }
+
+      // Tier 3: Standard Desktop / Android Blob URL download
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = blobUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      showToast(`Downloaded ${filename}`, 'success');
+    }
+
+    function openIosSaveModal(dataUrl, blob, filename) {
+      const modal = document.getElementById('ios-save-modal');
+      const img = document.getElementById('ios-save-preview-img');
+      const fnEl = document.getElementById('ios-save-filename');
+      const openTabBtn = document.getElementById('ios-open-tab-btn');
+
+      img.src = dataUrl;
+      fnEl.textContent = filename;
+      openTabBtn.onclick = () => {
+        const blobUrl = URL.createObjectURL(blob);
+        const win = window.open(blobUrl, '_blank');
+        if (!win) {
+          window.location.href = dataUrl;
+        }
+      };
+      modal.classList.remove('hidden');
+    }
+
+    function closeIosSaveModal() {
+      document.getElementById('ios-save-modal').classList.add('hidden');
+    }
+
+    async function downloadGeneratedQR() {
       const canvas = document.getElementById('generated-qr-canvas');
       if (!canvas) return;
-      const link = document.createElement('a');
       const safeId = (appState.lastGeneratedInvId || 'receipt').replace(/[^a-zA-Z0-9_-]/g, '_');
       const prefix = appState.lastGeneratedCarrier === 'stego' ? 'ReceiptSeal_Stego_' : 'ReceiptSeal_';
-      link.download = `${prefix}${safeId}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      await saveCanvasAsPngCrossPlatform(canvas, `${prefix}${safeId}.png`);
     }
 
     function copyGeneratedPayload() {
@@ -2683,6 +2829,10 @@
         errorCorrectionLevel: 'M',
         color: { dark: '#0f172a', light: '#ffffff' },
       });
+      const modalImg = document.getElementById('modal-qr-img');
+      if (modalImg) {
+        modalImg.src = modalCanvas.toDataURL('image/png');
+      }
 
       document.getElementById('modal-delete-btn').onclick = () => deleteVaultReceipt(uid);
       document.getElementById('vault-modal').classList.remove('hidden');
@@ -2693,13 +2843,10 @@
       appState.activeModalReceiptId = null;
     }
 
-    function downloadModalQR() {
+    async function downloadModalQR() {
       const canvas = document.getElementById('modal-qr-canvas');
       const invId = document.getElementById('modal-inv-id').textContent || 'receipt';
-      const link = document.createElement('a');
-      link.download = `ReceiptSeal_${invId.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      await saveCanvasAsPngCrossPlatform(canvas, `ReceiptSeal_${invId.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`);
     }
 
     function deleteVaultReceipt(uid) {
