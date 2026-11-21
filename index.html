@@ -289,9 +289,24 @@
             <label class="flex items-start gap-2 pt-1 cursor-pointer select-none">
               <input type="checkbox" id="stego-camera-boost" checked class="mt-0.5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500" />
               <span class="text-[11px] text-indigo-950 leading-snug">
-                <strong>Camera-Scannable Stealth Mode:</strong> Adds subtle corner registration dots &amp; low-opacity luminance grid so a live camera can align and decode the photo off a screen or print.
+                <strong>Screenshot &amp; Camera Stealth Grid:</strong> Embeds 4 corner bullseye finder targets + differential luminance grid so screenshots (even with borders), compressed shares, and live camera scans decode automatically.
               </span>
             </label>
+
+            <!-- Resilience Strength & Capacity Status -->
+            <div class="pt-1.5 border-t border-indigo-200/70 space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <label for="stego-strength-select" class="text-[11px] font-semibold text-indigo-950">Watermark Resilience</label>
+                <select id="stego-strength-select" class="rounded-lg border border-indigo-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-800 outline-none focus:border-indigo-500">
+                  <option value="12">Subtle (Strength 12 — Ultra Clean)</option>
+                  <option value="17" selected>Balanced (Strength 17 — Screenshots &amp; Camera)</option>
+                  <option value="24">High Resilience (Strength 24 — Heavy Compression/Print)</option>
+                </select>
+              </div>
+              <p id="stego-grid-capacity-note" class="text-[11px] text-indigo-800/90">
+                Grid Capacity: <strong>342 bytes</strong> (keep item names concise for screenshot/camera recovery; lossless PNG supports unlimited length).
+              </p>
+            </div>
           </div>
 
           <!-- Placeholder before generation -->
@@ -389,6 +404,7 @@
             <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center border border-slate-300">
               <video id="qr-video" class="w-full h-full object-cover hidden" playsinline muted></video>
               <canvas id="qr-scan-canvas" class="hidden"></canvas>
+              <canvas id="qr-hud-canvas" class="hidden absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
               <!-- Scanner Overlay Frame when active -->
               <div id="scanner-overlay" class="hidden absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
@@ -400,7 +416,7 @@
                   <span class="absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 border-amber-300"></span>
                   <div class="scanner-laser w-full h-0.5 bg-emerald-400 shadow-[0_0_8px_#34d399]"></div>
                 </div>
-                <span class="mt-2.5 px-2.5 py-1 rounded-full bg-slate-950/80 text-[11px] font-medium text-emerald-300 border border-emerald-500/30">
+                <span id="scanner-status-pill" class="mt-2.5 px-2.5 py-1 rounded-full bg-slate-950/80 text-[11px] font-medium text-emerald-300 border border-emerald-500/30">
                   Align QR Code or Stealth Image inside frame
                 </span>
               </div>
@@ -1400,13 +1416,13 @@
 
     /**
      * Embeds a UTF-8 string invisibly into the RGB Least Significant Bits (1 bit per channel)
-     * AND optionally embeds a Camera-Scannable Stealth Luminance Micro-Grid + 4 Corner Fiducials.
-     * Header format: 4-byte magic "RSL1" + 4-byte big-endian payload byte length + UTF-8 payload bytes
+     * AND optionally embeds a Screenshot/Camera-Scannable Stealth Luminance Micro-Grid + 4 Corner Bullseyes.
+     * LSB Header format: 4-byte magic "RSL1" + 4-byte big-endian payload byte length + UTF-8 payload bytes
      */
     function embedPayloadIntoCanvasLSB(sourceImage, targetCanvas, payloadStr) {
       const cameraBoost = document.getElementById('stego-camera-boost')?.checked ?? true;
-      // Standardize canvas aspect ratio to 3:2 (720x480) when camera boost is active
-      // so live camera perspective warping can reliably rectify the 4 corner registration markers
+      // Standardize canvas aspect ratio to 3:2 (720x480) when camera/screenshot boost is active
+      // so perspective warping can reliably rectify the 4 corner registration targets
       const width = cameraBoost ? 720 : (sourceImage.naturalWidth || sourceImage.width);
       const height = cameraBoost ? 480 : (sourceImage.naturalHeight || sourceImage.height);
       targetCanvas.width = width;
@@ -1418,13 +1434,13 @@
       const payloadBytes = new TextEncoder().encode(payloadStr);
       const totalBytes = 8 + payloadBytes.length;
       const totalBits = totalBytes * 8;
-      const availableBits = width * height * 3; // R, G, B channels (skip Alpha to avoid premultiplication loss)
+      const availableBits = width * height * 3; // R, G, B channels
 
       if (totalBits > availableBits) {
         throw new Error(`Cover image is too small (${width}×${height}px). Needs at least ${Math.ceil(totalBits / 3)} pixels.`);
       }
 
-      // Assemble header + payload buffer
+      // Assemble LSB header + payload buffer ("RSL1")
       const fullBuffer = new Uint8Array(totalBytes);
       fullBuffer[0] = 0x52; // 'R'
       fullBuffer[1] = 0x53; // 'S'
@@ -1436,10 +1452,10 @@
       fullBuffer[7] = payloadBytes.length & 0xff;
       fullBuffer.set(payloadBytes, 8);
 
-      // Step 1: If Camera-Scannable Stealth Mode is enabled, paint a subtle differential
-      // luminance micro-grid (64x42 cells = 2,688 bits = 336 bytes) + 4 subtle corner registration markers
+      // Step 1: Embed Screenshot/Camera-Resilient Differential Luminance Grid + 4 Corner Bullseyes
+      let gridEmbedded = false;
       if (cameraBoost) {
-        embedCameraStealthGrid(ctx, width, height, fullBuffer);
+        gridEmbedded = embedCameraStealthGrid(ctx, width, height, payloadBytes);
       }
 
       // Step 2: Write exact pixel LSBs on top (for 100% lossless file-upload recovery)
@@ -1464,105 +1480,419 @@
       }
 
       ctx.putImageData(imgData, 0, 0);
+
+      const noteEl = document.getElementById('stego-grid-capacity-note');
+      if (noteEl && cameraBoost) {
+        if (gridEmbedded) {
+          noteEl.innerHTML = `<span class="text-emerald-700 font-semibold">✓ Screenshot &amp; Camera Grid Active (${payloadBytes.length}/342 bytes)</span> — Survives screenshots, cropping, and camera scans.`;
+        } else {
+          noteEl.innerHTML = `<span class="text-amber-700 font-semibold">⚠ Payload (${payloadBytes.length} bytes) exceeds 342-byte Camera/Screenshot Grid</span> — Lossless PNG upload works, or shorten item names for camera/screenshot scanning.`;
+        }
+      }
     }
 
     /**
-     * Embeds a camera-survivable differential luminance watermark grid (64x44 = 2,816 bits = 352 bytes)
-     * plus 4 subtle corner bullseye fiducial markers so a camera can locate, deskew, and read the photo.
+     * Computes standard CRC-16/CCITT-FALSE checksum over a Uint8Array
      */
-    function embedCameraStealthGrid(ctx, width, height, fullBuffer) {
+    function computeCRC16(bytes) {
+      let crc = 0xffff;
+      for (let i = 0; i < bytes.length; i++) {
+        crc ^= bytes[i] << 8;
+        for (let j = 0; j < 8; j++) {
+          if (crc & 0x8000) {
+            crc = ((crc << 1) ^ 0x1021) & 0xffff;
+          } else {
+            crc = (crc << 1) & 0xffff;
+          }
+        }
+      }
+      return crc & 0xffff;
+    }
+
+    /**
+     * Embeds a screenshot & camera-survivable differential luminance watermark grid
+     * (64 cols x 44 rows = 2,816 bits = 352 bytes total: 10-byte RSC1+len+CRC16 header + up to 342 payload bytes)
+     * plus 4 unmistakable concentric bullseye finder targets at normalized (0.04, 0.04) insets.
+     */
+    function embedCameraStealthGrid(ctx, width, height, payloadBytes) {
       const cols = 64;
       const rows = 44;
-      const maxCapBytes = Math.floor((cols * rows) / 8);
-      if (fullBuffer.length > maxCapBytes) {
-        // Payload exceeds camera grid capacity; LSB file upload will still work
-        return;
+      const headerSize = 10; // "RSC1" (4B) + length (2B) + crc16 (2B) + reserved/version (2B)
+      const maxPayloadBytes = Math.floor((cols * rows) / 8) - headerSize; // 342 bytes
+      if (payloadBytes.length > maxPayloadBytes) {
+        return false;
       }
 
-      const marginX = 36;
-      const marginY = 32;
-      const gridW = width - marginX * 2;
-      const gridH = height - marginY * 2;
+      const crc = computeCRC16(payloadBytes);
+      const packet = new Uint8Array(headerSize + payloadBytes.length);
+      packet[0] = 0x52; // 'R'
+      packet[1] = 0x53; // 'S'
+      packet[2] = 0x43; // 'C'
+      packet[3] = 0x31; // '1'
+      packet[4] = (payloadBytes.length >>> 8) & 0xff;
+      packet[5] = payloadBytes.length & 0xff;
+      packet[6] = (crc >>> 8) & 0xff;
+      packet[7] = crc & 0xff;
+      packet[8] = 0x01; // Grid format v1
+      packet[9] = 0x5a; // Sync marker byte
+      packet.set(payloadBytes, headerSize);
+
+      // Normalized grid bounds inside the 4% corner finder target centers
+      const insetX = width * 0.04;
+      const insetY = height * 0.04;
+      const gridX = insetX + width * 0.03;
+      const gridY = insetY + height * 0.03;
+      const gridW = width - gridX * 2;
+      const gridH = height - gridY * 2;
       const cellW = gridW / cols;
       const cellH = gridH / rows;
 
-      // Paint subtle differential luminance blocks (left half vs right half of each cell)
-      // Differential encoding cancels out lighting gradients & screen glare!
-      for (let bitIdx = 0; bitIdx < fullBuffer.length * 8; bitIdx++) {
-        const byteVal = fullBuffer[bitIdx >>> 3];
+      // Read strength setting (default 17 luminance units)
+      const strengthVal = parseFloat(document.getElementById('stego-strength-select')?.value || '17') || 17;
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+
+      // Apply balanced luminance delta directly to RGB channels inside each cell's left/right halves
+      // Leaves outer 12% border of each cell untouched to prevent inter-cell bleed under JPEG/camera blur
+      for (let bitIdx = 0; bitIdx < packet.length * 8; bitIdx++) {
+        const byteVal = packet[bitIdx >>> 3];
         const bit = (byteVal >>> (7 - (bitIdx & 7))) & 1;
         const r = Math.floor(bitIdx / cols);
         const c = bitIdx % cols;
-        const x = marginX + c * cellW;
-        const y = marginY + r * cellH;
-        const halfW = cellW * 0.5;
 
-        // Bit 1: left slightly brighter (+14), right slightly darker (-14)
-        // Bit 0: left slightly darker (-14), right slightly brighter (+14)
-        ctx.fillStyle = bit ? 'rgba(255,255,255,0.085)' : 'rgba(0,0,0,0.085)';
-        ctx.fillRect(x + 0.5, y + 0.5, halfW - 0.5, cellH - 1);
+        const x0 = gridX + c * cellW;
+        const y0 = gridY + r * cellH;
+        const padX = cellW * 0.08;
+        const padY = cellH * 0.12;
+        const midX = x0 + cellW * 0.5;
 
-        ctx.fillStyle = bit ? 'rgba(0,0,0,0.085)' : 'rgba(255,255,255,0.085)';
-        ctx.fillRect(x + halfW, y + 0.5, halfW - 0.5, cellH - 1);
+        const leftDelta = bit ? strengthVal : -strengthVal;
+        const rightDelta = bit ? -strengthVal : strengthVal;
+
+        const startY = Math.max(0, Math.round(y0 + padY));
+        const endY = Math.min(height - 1, Math.round(y0 + cellH - padY));
+
+        // Left half
+        const lStartX = Math.max(0, Math.round(x0 + padX));
+        const lEndX = Math.min(width - 1, Math.round(midX - padX * 0.5));
+        for (let py = startY; py <= endY; py++) {
+          for (let px = lStartX; px <= lEndX; px++) {
+            const idx = (py * width + px) * 4;
+            data[idx] = Math.max(0, Math.min(255, data[idx] + leftDelta));
+            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + leftDelta));
+            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + leftDelta));
+          }
+        }
+
+        // Right half
+        const rStartX = Math.max(0, Math.round(midX + padX * 0.5));
+        const rEndX = Math.min(width - 1, Math.round(x0 + cellW - padX));
+        for (let py = startY; py <= endY; py++) {
+          for (let px = rStartX; px <= rEndX; px++) {
+            const idx = (py * width + px) * 4;
+            data[idx] = Math.max(0, Math.min(255, data[idx] + rightDelta));
+            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + rightDelta));
+            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + rightDelta));
+          }
+        }
       }
 
-      // Draw 4 subtle corner registration markers (low-contrast rings that blend into artwork)
+      ctx.putImageData(imgData, 0, 0);
+
+      // Draw 4 unmistakable high-contrast concentric bullseye finder targets at 4% normalized insets
+      // Ratio pattern across diameter: Dark : Bright : Dark : White-Pinpoint : Dark : Bright : Dark
+      const radius = Math.max(12, Math.round(Math.min(width, height) * 0.026));
       const corners = [
-        [18, 18],
-        [width - 18, 18],
-        [width - 18, height - 18],
-        [18, height - 18],
+        [insetX, insetY],
+        [width - insetX, insetY],
+        [width - insetX, height - insetY],
+        [insetX, height - insetY],
       ];
+
       corners.forEach(([cx, cy]) => {
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
-        ctx.lineWidth = 2.5;
+        // Outer dark halo
+        ctx.fillStyle = '#090d16';
         ctx.beginPath();
-        ctx.arc(cx, cy, 9, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
 
-        ctx.strokeStyle = 'rgba(15, 23, 42, 0.38)';
-        ctx.lineWidth = 2;
+        // Crisp bright ring
+        ctx.fillStyle = '#f8fafc';
         ctx.beginPath();
-        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.arc(cx, cy, radius * 0.72, 0, Math.PI * 2);
+        ctx.fill();
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        // Inner dark bullseye
+        ctx.fillStyle = '#090d16';
         ctx.beginPath();
-        ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+        ctx.arc(cx, cy, radius * 0.44, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Center white pinpoint
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx, cy, Math.max(1.8, radius * 0.17), 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       });
+
+      return true;
     }
 
     /**
-     * Attempts to decode the Camera-Scannable Stealth Luminance Micro-Grid from a camera frame or photo.
-     * Checks both direct image bounds and detected corner registration markers inside the camera guide box.
+     * Scans an ImageData buffer for concentric bullseye finder targets in all 4 quadrants.
+     * Returns an array of candidate quads: [{ tl, tr, br, bl, score }, ...]
      */
-    function extractCameraStealthGridFromImageData(imgData) {
+    function detectStealthFinderCorners(imgData) {
+      const { width, height, data } = imgData;
+      if (width < 120 || height < 90) return [];
+
+      // Downsample large screenshots/photos to ~560px max side for fast, noise-resistant finder search
+      const scale = Math.min(1, 560 / Math.max(width, height));
+      const sw = Math.max(80, Math.round(width * scale));
+      const sh = Math.max(60, Math.round(height * scale));
+      const lum = new Float32Array(sw * sh);
+
+      for (let y = 0; y < sh; y++) {
+        const sy = Math.min(height - 1, Math.floor(y / scale));
+        for (let x = 0; x < sw; x++) {
+          const sx = Math.min(width - 1, Math.floor(x / scale));
+          const idx = (sy * width + sx) * 4;
+          lum[y * sw + x] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+        }
+      }
+
+      const getL = (x, y) => {
+        const ix = Math.max(0, Math.min(sw - 1, x));
+        const iy = Math.max(0, Math.min(sh - 1, y));
+        return lum[iy * sw + ix];
+      };
+
+      // Score how closely (cx, cy) matches a concentric bullseye (bright center pinpoint, dark inner ring, bright outer ring, dark outer rim)
+      const scoreBullseye = (cx, cy, r) => {
+        const cLum = getL(cx, cy);
+        let darkInner = 0;
+        let brightMid = 0;
+        let darkOuter = 0;
+        const r1 = Math.max(1, Math.round(r * 0.34));
+        const r2 = Math.max(2, Math.round(r * 0.62));
+        const r3 = Math.max(3, Math.round(r * 0.92));
+
+        // Sample 8 compass directions
+        const dirs = [
+          [1, 0], [-1, 0], [0, 1], [0, -1],
+          [0.707, 0.707], [-0.707, 0.707], [0.707, -0.707], [-0.707, -0.707],
+        ];
+        for (let i = 0; i < 8; i++) {
+          const [dx, dy] = dirs[i];
+          darkInner += getL(Math.round(cx + dx * r1), Math.round(cy + dy * r1));
+          brightMid += getL(Math.round(cx + dx * r2), Math.round(cy + dy * r2));
+          darkOuter += getL(Math.round(cx + dx * r3), Math.round(cy + dy * r3));
+        }
+        darkInner /= 8;
+        brightMid /= 8;
+        darkOuter /= 8;
+
+        // Require clear contrast transitions: brightMid significantly brighter than both darkInner and darkOuter
+        const c1 = brightMid - darkInner;
+        const c2 = brightMid - darkOuter;
+        const c3 = cLum - darkInner;
+        if (c1 < 38 || c2 < 35 || c3 < 20) return 0;
+
+        // Symmetry check: ensure all 4 cardinal points on the bright ring are consistently bright
+        const bN = getL(cx, cy - r2);
+        const bS = getL(cx, cy + r2);
+        const bW = getL(cx - r2, cy);
+        const bE = getL(cx + r2, cy);
+        const ringSpread = Math.max(bN, bS, bW, bE) - Math.min(bN, bS, bW, bE);
+        if (ringSpread > 65) return 0;
+
+        return c1 + c2 + c3 * 0.6 - ringSpread * 0.5;
+      };
+
+      const candidates = [];
+      const radii = [5, 7, 9, 12, 15];
+      const step = 2;
+
+      for (let y = 10; y < sh - 10; y += step) {
+        for (let x = 10; x < sw - 10; x += step) {
+          let bestScore = 0;
+          let bestR = 7;
+          for (let ri = 0; ri < radii.length; ri++) {
+            const r = radii[ri];
+            if (x - r < 2 || x + r >= sw - 2 || y - r < 2 || y + r >= sh - 2) continue;
+            const sc = scoreBullseye(x, y, r);
+            if (sc > bestScore) {
+              bestScore = sc;
+              bestR = r;
+            }
+          }
+          if (bestScore > 115) {
+            // Refine center to 1px precision
+            let rx = x;
+            let ry = y;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                const sc = scoreBullseye(x + dx, y + dy, bestR);
+                if (sc > bestScore) {
+                  bestScore = sc;
+                  rx = x + dx;
+                  ry = y + dy;
+                }
+              }
+            }
+            candidates.push({
+              x: rx / scale,
+              y: ry / scale,
+              r: bestR / scale,
+              score: bestScore,
+            });
+          }
+        }
+      }
+
+      if (candidates.length < 4) return [];
+
+      // Non-maximum suppression: merge nearby detections within 18px (scaled)
+      candidates.sort((a, b) => b.score - a.score);
+      const peaks = [];
+      const minSep = Math.max(16, Math.min(width, height) * 0.03);
+      for (const cand of candidates) {
+        if (!peaks.some((p) => Math.hypot(p.x - cand.x, p.y - cand.y) < minSep)) {
+          peaks.push(cand);
+          if (peaks.length >= 16) break;
+        }
+      }
+
+      if (peaks.length < 4) return [];
+
+      // Partition peaks into Top-Left, Top-Right, Bottom-Right, Bottom-Left relative to candidate centroid
+      const quads = [];
+      for (let i = 0; i < peaks.length; i++) {
+        for (let j = i + 1; j < peaks.length; j++) {
+          for (let k = j + 1; k < peaks.length; k++) {
+            for (let l = k + 1; l < peaks.length; l++) {
+              const pts = [peaks[i], peaks[j], peaks[k], peaks[l]];
+              const cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x) / 4;
+              const cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y) / 4;
+
+              let tl = null, tr = null, br = null, bl = null;
+              for (const p of pts) {
+                if (p.x < cx && p.y < cy) tl = p;
+                else if (p.x >= cx && p.y < cy) tr = p;
+                else if (p.x >= cx && p.y >= cy) br = p;
+                else if (p.x < cx && p.y >= cy) bl = p;
+              }
+              if (!tl || !tr || !br || !bl) continue;
+
+              // Validate approximate rectangular/perspective geometry (aspect ratio ~1.1 to 2.1, opposite sides parallel-ish)
+              const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
+              const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
+              const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
+              const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
+
+              if (topW < 80 || leftH < 50) continue;
+              const widthRatio = Math.min(topW, botW) / Math.max(topW, botW);
+              const heightRatio = Math.min(leftH, rightH) / Math.max(leftH, rightH);
+              if (widthRatio < 0.72 || heightRatio < 0.72) continue;
+
+              const avgW = (topW + botW) * 0.5;
+              const avgH = (leftH + rightH) * 0.5;
+              const aspect = avgW / avgH;
+              if (aspect < 1.05 || aspect > 2.2) continue;
+
+              // Prefer quads whose aspect ratio is closest to the standard 3:2 (1.5) target layout
+              const aspectPenalty = Math.abs(aspect - 1.5) * 120;
+              const quadScore = tl.score + tr.score + br.score + bl.score - aspectPenalty;
+              quads.push({ tl, tr, br, bl, score: quadScore });
+            }
+          }
+        }
+      }
+
+      quads.sort((a, b) => b.score - a.score);
+      return quads.slice(0, 6);
+    }
+
+    /**
+     * Decodes the Camera/Screenshot-Resilient Stealth Luminance Grid using bilinear perspective
+     * mapping from the 4 detected corner bullseye targets (with fallback to full-frame / crop sampling).
+     * Validates "RSC1" header + 16-bit CRC checksum to guarantee zero false positives.
+     */
+    function extractCameraStealthGridFromImageData(imgData, returnMeta = false) {
       const { width, height, data } = imgData;
       const cols = 64;
       const rows = 44;
+      const headerSize = 10;
 
-      // Helper to sample differential luminance grid inside a normalized bounding rect [x0, y0, x1, y1]
-      const tryDecodeRect = (rx, ry, rw, rh) => {
-        const marginX = rw * (36 / 720);
-        const marginY = rh * (32 / 480);
-        const gridW = rw - marginX * 2;
-        const gridH = rh - marginY * 2;
-        if (gridW < cols * 2 || gridH < rows * 2) return null;
+      // Bilinear sub-pixel luminance sampler
+      const sampleLumBilinear = (px, py) => {
+        const x = Math.max(0, Math.min(width - 1.001, px));
+        const y = Math.max(0, Math.min(height - 1.001, py));
+        const x0 = Math.floor(x);
+        const y0 = Math.floor(y);
+        const x1 = Math.min(width - 1, x0 + 1);
+        const y1 = Math.min(height - 1, y0 + 1);
+        const fx = x - x0;
+        const fy = y - y0;
 
-        const cellW = gridW / cols;
-        const cellH = gridH / rows;
-
-        const sampleLum = (px, py) => {
-          const ix = Math.max(0, Math.min(width - 1, Math.round(px)));
-          const iy = Math.max(0, Math.min(height - 1, Math.round(py)));
+        const lumAt = (ix, iy) => {
           const idx = (iy * width + ix) * 4;
           return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
         };
 
-        const readGridBytes = (startByte, count) => {
+        const l00 = lumAt(x0, y0);
+        const l10 = lumAt(x1, y0);
+        const l01 = lumAt(x0, y1);
+        const l11 = lumAt(x1, y1);
+        return (l00 * (1 - fx) + l10 * fx) * (1 - fy) + (l01 * (1 - fx) + l11 * fx) * fy;
+      };
+
+      // Map normalized image coordinates (u, v) in [0..1] across the quadrilateral defined by the 4 corner bullseyes
+      // Note: The 4 corner bullseyes sit at normalized (0.04, 0.04), (0.96, 0.04), (0.96, 0.96), (0.04, 0.96)
+      // of the original embedded image!
+      const decodeFromQuad = (quad) => {
+        const mapUV = (u, v) => {
+          // Convert full-image (u, v) to bullseye-quad normalized coordinates (qu, qv)
+          const qu = (u - 0.04) / 0.92;
+          const qv = (v - 0.04) / 0.92;
+          const topX = quad.tl.x + (quad.tr.x - quad.tl.x) * qu;
+          const topY = quad.tl.y + (quad.tr.y - quad.tl.y) * qu;
+          const botX = quad.bl.x + (quad.br.x - quad.bl.x) * qu;
+          const botY = quad.bl.y + (quad.br.y - quad.bl.y) * qu;
+          return [
+            topX + (botX - topX) * qv,
+            topY + (botY - topY) * qv,
+          ];
+        };
+
+        // Grid occupies u in [0.07, 0.93], v in [0.07, 0.93]
+        const uStart = 0.07;
+        const vStart = 0.07;
+        const uSpan = 0.86;
+        const vSpan = 0.86;
+        const cellU = uSpan / cols;
+        const cellV = vSpan / rows;
+
+        // Multi-point vertical averaging inside each cell half to suppress JPEG/camera noise
+        const sampleCellBit = (r, c) => {
+          const u0 = uStart + c * cellU;
+          const v0 = vStart + r * cellV;
+          let leftSum = 0;
+          let rightSum = 0;
+          const vOffsets = [0.3, 0.5, 0.7];
+          for (let vi = 0; vi < vOffsets.length; vi++) {
+            const vSample = v0 + cellV * vOffsets[vi];
+            const [lx, ly] = mapUV(u0 + cellU * 0.25, vSample);
+            const [rx, ry] = mapUV(u0 + cellU * 0.75, vSample);
+            leftSum += sampleLumBilinear(lx, ly);
+            rightSum += sampleLumBilinear(rx, ry);
+          }
+          return leftSum > rightSum ? 1 : 0;
+        };
+
+        const readPacketBytes = (startByte, count) => {
           const out = new Uint8Array(count);
           for (let b = 0; b < count; b++) {
             let val = 0;
@@ -1571,35 +1901,33 @@
               const r = Math.floor(bitIdx / cols);
               const c = bitIdx % cols;
               if (r >= rows) return null;
-              const cx = rx + marginX + c * cellW;
-              const cy = ry + marginY + r * cellH + cellH * 0.5;
-              const leftLum = sampleLum(cx + cellW * 0.25, cy);
-              const rightLum = sampleLum(cx + cellW * 0.75, cy);
-              const bitVal = leftLum > rightLum ? 1 : 0;
-              val = (val << 1) | bitVal;
+              val = (val << 1) | sampleCellBit(r, c);
             }
             out[b] = val;
           }
           return out;
         };
 
-        const header = readGridBytes(0, 8);
+        const header = readPacketBytes(0, headerSize);
         if (!header) return null;
-        if (header[0] !== 0x52 || header[1] !== 0x53 || header[2] !== 0x4c || header[3] !== 0x31) {
+
+        // Check magic "RSC1"
+        if (header[0] !== 0x52 || header[1] !== 0x53 || header[2] !== 0x43 || header[3] !== 0x31) {
           return null;
         }
 
-        const payloadLen =
-          ((header[4] << 24) >>> 0) +
-          (header[5] << 16) +
-          (header[6] << 8) +
-          header[7];
+        const payloadLen = (header[4] << 8) | header[5];
+        const expectedCrc = (header[6] << 8) | header[7];
+        const maxPayloadBytes = Math.floor((cols * rows) / 8) - headerSize;
+        if (payloadLen <= 0 || payloadLen > maxPayloadBytes) return null;
 
-        const maxBytes = Math.floor((cols * rows) / 8) - 8;
-        if (payloadLen <= 0 || payloadLen > maxBytes) return null;
-
-        const payloadBytes = readGridBytes(8, payloadLen);
+        const payloadBytes = readPacketBytes(headerSize, payloadLen);
         if (!payloadBytes) return null;
+
+        // Verify 16-bit CRC checksum so corrupted frames never produce garbage JSON
+        const actualCrc = computeCRC16(payloadBytes);
+        if (actualCrc !== expectedCrc) return null;
+
         try {
           return new TextDecoder('utf-8', { fatal: true }).decode(payloadBytes);
         } catch (e) {
@@ -1607,24 +1935,25 @@
         }
       };
 
-      // 1. Try full image rect (works for screenshots/uploaded photos)
-      const fullAttempt = tryDecodeRect(0, 0, width, height);
-      if (fullAttempt) return fullAttempt;
+      // 1. Primary path: Detect the 4 corner bullseye targets anywhere in the screenshot or camera frame
+      const detectedQuads = detectStealthFinderCorners(imgData);
+      for (const quad of detectedQuads) {
+        const decoded = decodeFromQuad(quad);
+        if (decoded) {
+          return returnMeta ? { payload: decoded, quad } : decoded;
+        }
+      }
 
-      // 2. Try centered 3:2 camera guide box region with slight scale/offset jitter
-      // matching the on-screen viewfinder overlay
-      const guideW = Math.min(width * 0.85, height * 0.85 * 1.5);
-      const guideH = guideW / 1.5;
-      const baseX = (width - guideW) / 2;
-      const baseY = (height - guideH) / 2;
-
-      for (const scale of [1.0, 0.96, 1.04, 0.92, 1.08]) {
-        const sw = guideW * scale;
-        const sh = guideH * scale;
-        const sx = (width - sw) / 2;
-        const sy = (height - sh) / 2;
-        const attempt = tryDecodeRect(sx, sy, sw, sh);
-        if (attempt) return attempt;
+      // 2. Fallback path: If user cropped tightly right to the image edges without outer padding
+      const fullQuad = {
+        tl: { x: width * 0.04, y: height * 0.04 },
+        tr: { x: width * 0.96, y: height * 0.04 },
+        br: { x: width * 0.96, y: height * 0.96 },
+        bl: { x: width * 0.04, y: height * 0.96 },
+      };
+      const fullDecoded = decodeFromQuad(fullQuad);
+      if (fullDecoded) {
+        return returnMeta ? { payload: fullDecoded, quad: fullQuad } : fullDecoded;
       }
 
       return null;
@@ -1890,12 +2219,19 @@
         // Start frame scanning loop
         const scanCanvas = document.getElementById('qr-scan-canvas');
         const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+        const hudCanvas = document.getElementById('qr-hud-canvas');
+        const hudCtx = hudCanvas.getContext('2d');
+        hudCanvas.classList.remove('hidden');
 
         const tick = () => {
           if (!appState.cameraStream) return;
           if (video.readyState === video.HAVE_ENOUGH_DATA) {
             scanCanvas.width = video.videoWidth;
             scanCanvas.height = video.videoHeight;
+            hudCanvas.width = video.videoWidth;
+            hudCanvas.height = video.videoHeight;
+            hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+
             ctx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
             const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
 
@@ -1911,12 +2247,42 @@
               return;
             }
 
-            // 2. Try Camera-Scannable Stealth Watermark Grid detection
-            const stealthData = extractCameraStealthGridFromImageData(imageData);
-            if (stealthData) {
+            // 2. Visualize detected Stealth Corner Targets on live camera HUD
+            const candidateQuads = detectStealthFinderCorners(imageData);
+            const statusPill = document.getElementById('scanner-status-pill');
+            if (candidateQuads.length > 0) {
+              const best = candidateQuads[0];
+              hudCtx.save();
+              hudCtx.strokeStyle = '#34d399';
+              hudCtx.lineWidth = 3;
+              hudCtx.beginPath();
+              hudCtx.moveTo(best.tl.x, best.tl.y);
+              hudCtx.lineTo(best.tr.x, best.tr.y);
+              hudCtx.lineTo(best.br.x, best.br.y);
+              hudCtx.lineTo(best.bl.x, best.bl.y);
+              hudCtx.closePath();
+              hudCtx.stroke();
+
+              [best.tl, best.tr, best.br, best.bl].forEach((pt) => {
+                hudCtx.fillStyle = '#fbbf24';
+                hudCtx.beginPath();
+                hudCtx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+                hudCtx.fill();
+              });
+              hudCtx.restore();
+              if (statusPill) {
+                statusPill.textContent = 'Stealth Targets Locked — Decoding...';
+              }
+            } else if (statusPill) {
+              statusPill.textContent = 'Align QR Code or Stealth Image inside frame';
+            }
+
+            // 3. Try Camera-Scannable Stealth Watermark Grid detection
+            const stealthResult = extractCameraStealthGridFromImageData(imageData, true);
+            if (stealthResult && stealthResult.payload) {
               stopCameraScanner();
               showToast('Stealth Watermark Image detected from camera!', 'info');
-              verifyRawPayloadString(stealthData, true);
+              verifyRawPayloadString(stealthResult.payload, true);
               return;
             }
           }
@@ -1943,6 +2309,10 @@
       const video = document.getElementById('qr-video');
       video.srcObject = null;
       video.classList.add('hidden');
+      const hudCanvas = document.getElementById('qr-hud-canvas');
+      if (hudCanvas) {
+        hudCanvas.classList.add('hidden');
+      }
       document.getElementById('scanner-overlay').classList.add('hidden');
       document.getElementById('camera-placeholder').classList.remove('hidden');
       document.getElementById('btn-start-camera').classList.remove('hidden');
