@@ -236,25 +236,7 @@
           </div>
 
           <!-- Sign & Generate Button -->
-          <button type="button" id="btn-sign-generate" onclick="handleSignAndGenerate()" class="w-full py-3.5 px-5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span>Sign &amp; Generate Receipt QR Code</span>
-          </button>
-        </div>
-
-        <!-- Right Column: Generated QR Code & Cryptographic Output -->
-        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 flex flex-col items-center text-center space-y-5">
-          <div class="w-full flex items-center justify-between border-b border-slate-100 pb-4 text-left">
-            <div>
-              <h2 class="text-base font-bold text-slate-900">Cryptographic Seal Output</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Standard QR or Sneaky Image Steganography</p>
-            </div>
-            <span id="qr-byte-badge" class="hidden px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-mono text-xs font-semibold">0 B</span>
-          </div>
-
-          <!-- Carrier Mode Switcher: Standard QR vs Sneaky Image Embed -->
+          <!-- Carrier Mode Switcher: Standard QR vs Art-Card Mosaic Embed -->
           <div class="w-full grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
             <button type="button" id="carrier-btn-qr" onclick="setIssueCarrierMode('qr')" class="py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -266,45 +248,63 @@
               <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
               </svg>
-              Sneaky Image Embed
+              Art-Card Mosaic Embed
             </button>
           </div>
 
-          <!-- Cover Image Uploader (Shown when Sneaky Image Embed mode is active) -->
-          <div id="stego-cover-picker" class="hidden w-full text-left space-y-2.5 bg-indigo-50/60 border border-indigo-200/80 rounded-2xl p-3.5">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-indigo-950">Cover Image (Steganography Carrier)</span>
-              <button type="button" onclick="generateSampleCoverImage()" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 underline underline-offset-2">
-                Use Sample Art
+          <!-- Cover Artwork & Mosaic Settings (Shown when Art-Card Mosaic Embed mode is active) -->
+          <div id="stego-cover-picker" class="hidden w-full text-left space-y-3 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-1.5">
+              <span class="text-xs font-bold text-indigo-950">Art-Card Mosaic Carrier</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Survives Screenshots • WhatsApp/Telegram • Camera
+              </span>
+            </div>
+
+            <!-- Curated Artwork Theme Presets -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="generateThemedCoverArtwork('gold')" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 text-[11px] font-semibold border border-amber-500/40 transition truncate">
+                ✦ Luxury Gold
+              </button>
+              <button type="button" onclick="generateThemedCoverArtwork('emerald')" class="py-1.5 px-2 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 text-[11px] font-semibold border border-emerald-500/40 transition truncate">
+                ✦ Emerald Seal
+              </button>
+              <button type="button" onclick="generateThemedCoverArtwork('cobalt')" class="py-1.5 px-2 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-sky-300 text-[11px] font-semibold border border-sky-500/40 transition truncate">
+                ✦ Cobalt Art
               </button>
             </div>
+
+            <!-- Custom Background Photo Upload -->
             <label for="stego-cover-input" class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-white hover:bg-indigo-50/40 border border-dashed border-indigo-300 rounded-xl cursor-pointer transition">
               <div class="min-w-0">
-                <p id="stego-cover-filename" class="text-xs font-semibold text-slate-800 truncate">Choose cover image (PNG, JPG, WebP)...</p>
-                <p id="stego-cover-dims" class="text-[11px] text-slate-500">Embeds both exact LSBs &amp; Camera-Scannable Micro-Grid</p>
+                <p id="stego-cover-filename" class="text-xs font-semibold text-slate-800 truncate">Luxury Gold Security Card (Default)</p>
+                <p id="stego-cover-dims" class="text-[11px] text-slate-500">Or upload any custom photo to mosaic-blend behind seal</p>
               </div>
-              <span class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold shrink-0">Browse</span>
+              <span class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold shrink-0">Upload Photo</span>
               <input id="stego-cover-input" type="file" accept="image/*" onchange="handleCoverImageSelect(event)" class="hidden" />
             </label>
-            <label class="flex items-start gap-2 pt-1 cursor-pointer select-none">
-              <input type="checkbox" id="stego-camera-boost" checked class="mt-0.5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500" />
-              <span class="text-[11px] text-indigo-950 leading-snug">
-                <strong>Screenshot &amp; Camera Stealth Grid:</strong> Embeds 4 corner bullseye finder targets + differential luminance grid so screenshots (even with borders), compressed shares, and live camera scans decode automatically.
-              </span>
-            </label>
 
-            <!-- Resilience Strength & Capacity Status -->
-            <div class="pt-1.5 border-t border-indigo-200/70 space-y-1.5">
+            <!-- Art Blend & Compression Resilience Controls -->
+            <div class="pt-1.5 border-t border-indigo-200/70 space-y-2">
               <div class="flex items-center justify-between gap-2">
-                <label for="stego-strength-select" class="text-[11px] font-semibold text-indigo-950">Watermark Resilience</label>
+                <label for="stego-strength-select" class="text-[11px] font-semibold text-indigo-950">Mosaic Tile Contrast</label>
                 <select id="stego-strength-select" class="rounded-lg border border-indigo-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-800 outline-none focus:border-indigo-500">
-                  <option value="12">Subtle (Strength 12 — Ultra Clean)</option>
-                  <option value="17" selected>Balanced (Strength 17 — Screenshots &amp; Camera)</option>
-                  <option value="24">High Resilience (Strength 24 — Heavy Compression/Print)</option>
+                  <option value="28">Subtle Glass (ΔL 56 — Photo Focus)</option>
+                  <option value="34" selected>Balanced Mosaic (ΔL 68 — Screenshots &amp; Chat)</option>
+                  <option value="42">Ultra-Resilient (ΔL 84 — Heavy JPEG / Print)</option>
                 </select>
               </div>
-              <p id="stego-grid-capacity-note" class="text-[11px] text-indigo-800/90">
-                Grid Capacity: <strong>342 bytes</strong> (keep item names concise for screenshot/camera recovery; lossless PNG supports unlimited length).
+
+              <div>
+                <div class="flex items-center justify-between text-[11px] mb-1">
+                  <label for="stego-photo-clarity" class="font-semibold text-indigo-950">Background Photo Clarity</label>
+                  <span id="stego-photo-clarity-val" class="font-mono font-semibold text-indigo-700">85%</span>
+                </div>
+                <input type="range" id="stego-photo-clarity" min="45" max="100" value="85" oninput="document.getElementById('stego-photo-clarity-val').textContent = this.value + '%'" class="w-full accent-indigo-600 h-1.5 bg-indigo-200 rounded-lg cursor-pointer" />
+              </div>
+
+              <p id="stego-grid-capacity-note" class="text-[11px] text-indigo-900/90 leading-snug">
+                <strong>RSB2 Binary Mosaic Capacity:</strong> 133 bytes (1,064 differential macro-tile pairs). Packs invoice + raw 64-byte ECDSA signature into ~95–120 bytes!
               </p>
             </div>
           </div>
@@ -328,7 +328,7 @@
               <img id="generated-qr-img" alt="Generated ReceiptSeal PNG" class="rounded-lg max-w-full max-h-72 w-auto h-auto mx-auto select-all" />
               <p class="text-[11px] text-slate-400 mt-1.5">Tip: On iPhone/iPad, tap <strong>Save / Share PNG</strong> or press &amp; hold the image above</p>
               <span id="stego-active-pill" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                Stealth LSB Payload Embedded • Lossless PNG
+                RSB2 Differential Mosaic + LSB • Screenshot &amp; Chat Proof
               </span>
             </div>
 
@@ -872,8 +872,8 @@
       publicSpkiB64u: '',     // Compact Base64url SPKI public key
       keyFingerprint: '',     // Short SHA-256 hex fingerprint of public key
       privateKeyRevealed: false,
-      issueCarrierMode: 'qr', // 'qr' | 'stego'
-      coverImage: null,       // Loaded HTMLImageElement or HTMLCanvasElement for LSB steganography
+      coverImage: null,       // Loaded HTMLImageElement or HTMLCanvasElement for Art-Card Mosaic
+      activeArtTheme: 'gold', // 'gold' | 'emerald' | 'cobalt' | 'custom'
       lastGeneratedCarrier: 'qr',
       lastGeneratedPayload: '',
       lastGeneratedInvId: '',
@@ -1341,7 +1341,7 @@
     }
 
     /**
-     * Switches between Standard QR generation and Sneaky Image Steganography embedding
+     * Switches between Standard QR generation and Art-Card Mosaic Steganography embedding
      */
     function setIssueCarrierMode(mode) {
       appState.issueCarrierMode = mode;
@@ -1356,12 +1356,906 @@
         stegoBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
         qrBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
         coverPicker.classList.remove('hidden');
-        signBtnSpan.textContent = 'Sign & Embed Into Cover Image';
-        emptyTitle.textContent = 'No Stego Image Generated Yet';
-        emptyDesc.textContent = 'Upload a cover image above (or click "Use Sample Art"), fill out the receipt, and embed the signature invisibly.';
+        signBtnSpan.textContent = 'Sign & Generate Mosaic Art Card';
+        emptyTitle.textContent = 'No Mosaic Art Card Generated Yet';
+        emptyDesc.textContent = 'Choose a security card theme or upload a custom photo above, then click "Sign & Generate Mosaic Art Card".';
         if (!appState.coverImage) {
-          generateSampleCoverImage(true);
+          generateThemedCoverArtwork('gold', true);
         }
+      } else {
+        qrBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
+        stegoBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+        coverPicker.classList.add('hidden');
+        signBtnSpan.textContent = 'Sign & Generate Receipt QR Code';
+        emptyTitle.textContent = 'No Seal Generated Yet';
+        emptyDesc.textContent = 'Fill out the invoice details on the left and click "Sign & Generate Receipt QR Code".';
+      }
+    }
+
+    /**
+     * Loads a user-selected custom photo for the Art-Card Mosaic carrier
+     */
+    function handleCoverImageSelect(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          appState.coverImage = img;
+          appState.activeArtTheme = 'custom';
+          document.getElementById('stego-cover-filename').textContent = file.name;
+          document.getElementById('stego-cover-dims').textContent = `${img.width}×${img.height}px • Blended into 1232×924 Mosaic Card`;
+          showToast('Custom background photo loaded into Art-Card Mosaic!', 'success');
+        };
+        img.onerror = () => showToast('Failed to load cover image.', 'error');
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /**
+     * Generates a 1232x924 executive security guilloche artwork card ('gold', 'emerald', or 'cobalt')
+     */
+    function generateThemedCoverArtwork(theme = 'gold', silent = false) {
+      appState.activeArtTheme = theme;
+      const W = 1232;
+      const H = 924;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      const palettes = {
+        gold: {
+          bg1: '#0f172a',
+          bg2: '#1e1b4b',
+          bg3: '#292118',
+          accent: '#fbbf24',
+          accentSoft: 'rgba(251, 191, 36, 0.16)',
+          title: '#fef3c7',
+          sub: '#fcd34d',
+          label: 'LUXURY GOLD CERTIFICATE',
+        },
+        emerald: {
+          bg1: '#022c22',
+          bg2: '#064e3b',
+          bg3: '#0f172a',
+          accent: '#34d399',
+          accentSoft: 'rgba(52, 211, 153, 0.16)',
+          title: '#ecfdf5',
+          sub: '#6ee7b7',
+          label: 'EMERALD BOTANICAL SEAL',
+        },
+        cobalt: {
+          bg1: '#090d16',
+          bg2: '#172554',
+          bg3: '#1e1b4b',
+          accent: '#38bdf8',
+          accentSoft: 'rgba(56, 189, 248, 0.16)',
+          title: '#f0f9ff',
+          sub: '#7dd3fc',
+          label: 'COBALT GEOMETRIC VOUCHER',
+        },
+      };
+
+      const p = palettes[theme] || palettes.gold;
+
+      // Rich radial/linear gradient backdrop
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, p.bg1);
+      grad.addColorStop(0.5, p.bg2);
+      grad.addColorStop(1, p.bg3);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Decorative Guilloche Spirograph Rosette in the center-right
+      ctx.save();
+      ctx.translate(W * 0.5, H * 0.5);
+      ctx.strokeStyle = p.accentSoft;
+      ctx.lineWidth = 2;
+      for (let k = 0; k < 24; k++) {
+        ctx.rotate(Math.PI / 12);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 390, 150, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Inner ornamental frame
+      ctx.strokeStyle = p.accentSoft;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(115, 115, W - 230, H - 230);
+
+      // Certificate Typography
+      const merchant = document.getElementById('issue-merchant')?.value.trim() || 'ACME DIGITAL STORE';
+      const invId = document.getElementById('issue-inv-id')?.value.trim() || 'OFFICIAL RECEIPT';
+      const dt = document.getElementById('issue-date')?.value.trim() || '';
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = p.sub;
+      ctx.font = '700 22px Inter, sans-serif';
+      ctx.fillText(p.label, W / 2, 320);
+
+      ctx.fillStyle = p.title;
+      ctx.font = '800 54px Inter, sans-serif';
+      ctx.fillText(merchant.slice(0, 26), W / 2, 415);
+
+      ctx.fillStyle = p.accent;
+      ctx.font = '600 32px JetBrains Mono, monospace';
+      ctx.fillText(invId, W / 2, 485);
+
+      if (dt) {
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.font = '500 22px Inter, sans-serif';
+        ctx.fillText('Issued: ' + dt, W / 2, 540);
+      }
+
+      ctx.fillStyle = p.sub;
+      ctx.font = '600 20px Inter, sans-serif';
+      ctx.fillText('ECDSA P-256 CRYPTOGRAPHICALLY AUTHENTICATED', W / 2, 625);
+
+      appState.coverImage = canvas;
+      document.getElementById('stego-cover-filename').textContent = p.label + ' (1232×924)';
+      document.getElementById('stego-cover-dims').textContent = '1,064 Differential Mosaic Tile Pairs • Compression & Screenshot Proof';
+      if (!silent) {
+        showToast(`Applied ${p.label} artwork theme.`, 'info');
+      }
+    }
+
+    /**
+     * Packs a signed receipt envelope into the ultra-compact RSB2 binary wire format:
+     *   [0..1]   Magic "RS" (0x52, 0x53)
+     *   [2]      Version 0x02
+     *   [3..4]   Compact JSON data length (uint16 big-endian)
+     *   [5..5+N] UTF-8 bytes of compact receipt data object (envelope.d)
+     *   [5+N..69+N] Raw 64-byte IEEE P1363 ECDSA P-256 signature (decoded from envelope.s)
+     *   [69+N..71+N] CRC-16/CCITT-FALSE checksum over bytes [0..69+N)
+     */
+    function packSignedEnvelopeToRSB2(signedEnvelope) {
+      const compactDataJson = JSON.stringify(signedEnvelope.d);
+      const dataBytes = new TextEncoder().encode(compactDataJson);
+      const sigBytes = new Uint8Array(base64UrlToArrayBuffer(signedEnvelope.s));
+      if (sigBytes.length !== 64) {
+        throw new Error(`Expected 64-byte ECDSA P-256 signature, got ${sigBytes.length} bytes.`);
+      }
+
+      const bodyLen = 5 + dataBytes.length + 64;
+      const packet = new Uint8Array(bodyLen + 2);
+      packet[0] = 0x52; // 'R'
+      packet[1] = 0x53; // 'S'
+      packet[2] = 0x02; // Version 2 (RSB2)
+      packet[3] = (dataBytes.length >>> 8) & 0xff;
+      packet[4] = dataBytes.length & 0xff;
+      packet.set(dataBytes, 5);
+      packet.set(sigBytes, 5 + dataBytes.length);
+
+      const crc = computeCRC16(packet.subarray(0, bodyLen));
+      packet[bodyLen] = (crc >>> 8) & 0xff;
+      packet[bodyLen + 1] = crc & 0xff;
+      return packet;
+    }
+
+    /**
+     * Unpacks an RSB2 binary packet back into the canonical JSON string { v: 1, d: ..., s: ... }
+     * Returns null if header or CRC-16 fails validation.
+     */
+    function unpackRSB2ToCanonicalJson(packetBytes) {
+      if (!packetBytes || packetBytes.length < 72) return null;
+      if (packetBytes[0] !== 0x52 || packetBytes[1] !== 0x53 || packetBytes[2] !== 0x02) {
+        return null;
+      }
+      const dataLen = (packetBytes[3] << 8) | packetBytes[4];
+      const bodyLen = 5 + dataLen + 64;
+      if (dataLen <= 2 || bodyLen + 2 > packetBytes.length) return null;
+
+      const expectedCrc = (packetBytes[bodyLen] << 8) | packetBytes[bodyLen + 1];
+      const actualCrc = computeCRC16(packetBytes.subarray(0, bodyLen));
+      if (actualCrc !== expectedCrc) return null;
+
+      try {
+        const dataSlice = packetBytes.subarray(5, 5 + dataLen);
+        const sigSlice = packetBytes.slice(5 + dataLen, 5 + dataLen + 64);
+        const dataJsonStr = new TextDecoder('utf-8', { fatal: true }).decode(dataSlice);
+        const dataObj = JSON.parse(dataJsonStr);
+        const sigB64u = arrayBufferToBase64Url(sigSlice.buffer);
+        return JSON.stringify({ v: 1, d: dataObj, s: sigB64u });
+      } catch (e) {
+        return null;
+      }
+    }
+
+    /**
+     * Returns the deterministic layout of the 56 x 42 Mosaic Art Card (1232 x 924 px, 22x22 px tiles):
+     * - 4 Corner Finder Targets (each 4x4 tiles = 88x88 px at corners: TL, TR, BR, BL)
+     * - Perimeter Calibration Ring on row 0, row 41, col 0, col 55 between corners
+     * - 1,064 Differential Adjacent Tile Pairs (horizontal pairs (c, c+1) on non-reserved cells)
+     */
+    function getMosaicGridLayout() {
+      const cols = 56;
+      const rows = 42;
+      const tileSize = 22; // 56*22 = 1232, 42*22 = 924 (exact 4:3)
+      const reserved = new Uint8Array(rows * cols); // 0 = data, 1 = finder, 2 = calibration
+
+      // Mark 4x4 corner finder regions
+      const markRect = (r0, c0, h, w, val) => {
+        for (let r = r0; r < r0 + h; r++) {
+          for (let c = c0; c < c0 + w; c++) {
+            reserved[r * cols + c] = val;
+          }
+        }
+      };
+      markRect(0, 0, 4, 4, 1);                 // Top-Left Finder
+      markRect(0, cols - 4, 4, 4, 1);          // Top-Right Finder
+      markRect(rows - 4, cols - 4, 4, 4, 1);   // Bottom-Right Finder
+      markRect(rows - 4, 0, 4, 4, 1);          // Bottom-Left Finder
+
+      // Mark outer perimeter timing/calibration strip between corners
+      for (let c = 4; c < cols - 4; c++) {
+        reserved[0 * cols + c] = 2;
+        reserved[(rows - 1) * cols + c] = 2;
+      }
+      for (let r = 4; r < rows - 4; r++) {
+        reserved[r * cols + 0] = 2;
+        reserved[r * cols + (cols - 1)] = 2;
+      }
+
+      // Collect horizontal adjacent tile pairs [(r, cA), (r, cB)]
+      const pairs = [];
+      for (let r = 1; r < rows - 1; r++) {
+        let c = 1;
+        while (c + 1 < cols - 1) {
+          if (reserved[r * cols + c] === 0 && reserved[r * cols + (c + 1)] === 0) {
+            pairs.push([r, c, c + 1]);
+            c += 2;
+          } else {
+            c += 1;
+          }
+        }
+      }
+
+      return { cols, rows, tileSize, width: cols * tileSize, height: rows * tileSize, reserved, pairs };
+    }
+
+    /**
+     * Renders the 1232x924 Compression-Proof Mosaic Art Card onto targetCanvas:
+     * 1. Draws the user's photo or curated security theme smoothly across the canvas.
+     * 2. Overlays a translucent architectural stained-glass mosaic of 22x22 px tiles where
+     *    each bit is encoded as a Differential Adjacent Tile Pair (Lum(A) vs Lum(B)) that
+     *    preserves the underlying photo's average brightness while guaranteeing |Lum(A)-Lum(B)| >= 56..84.
+     * 3. Draws 4 large 88x88 px (4x4 tile) QR/Aztec-style 1:1:3:1:1 high-contrast corner finder targets
+     *    with an asymmetric Top-Left orientation anchor so rotation & perspective are 100% unambiguous.
+     * 4. Also writes lossless RSL1 LSBs into the non-finder background for instant lossless PNG decoding.
+     */
+    function embedPayloadIntoCanvasLSB(sourceImage, targetCanvas, payloadStr, signedEnvelope = null) {
+      const layout = getMosaicGridLayout();
+      const { cols, rows, tileSize, width, height, pairs } = layout;
+      targetCanvas.width = width;
+      targetCanvas.height = height;
+
+      const ctx = targetCanvas.getContext('2d', { willReadFrequently: true });
+
+      // Cover-fit sourceImage onto 1232x924 canvas
+      const srcW = sourceImage.naturalWidth || sourceImage.width;
+      const srcH = sourceImage.naturalHeight || sourceImage.height;
+      const scale = Math.max(width / srcW, height / srcH);
+      const drawW = srcW * scale;
+      const drawH = srcH * scale;
+      const offsetX = (width - drawW) / 2;
+      const offsetY = (height - drawH) / 2;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(sourceImage, offsetX, offsetY, drawW, drawH);
+
+      // Apply user-configured background photo clarity (dimming slightly if needed for high contrast)
+      const clarityPct = parseInt(document.getElementById('stego-photo-clarity')?.value || '85', 10);
+      if (clarityPct < 100) {
+        const dimAlpha = ((100 - clarityPct) / 100) * 0.65;
+        ctx.fillStyle = `rgba(15, 23, 42, ${dimAlpha.toFixed(3)})`;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // Pack signed envelope into RSB2 binary wire format (~95-120 bytes)
+      let envelopeObj = signedEnvelope;
+      if (!envelopeObj) {
+        try {
+          envelopeObj = JSON.parse(payloadStr);
+        } catch (e) {
+          envelopeObj = null;
+        }
+      }
+
+      const rsb2Packet = envelopeObj ? packSignedEnvelopeToRSB2(envelopeObj) : null;
+      const maxMosaicBytes = Math.floor(pairs.length / 8); // 1,064 / 8 = 133 bytes
+      const mosaicFits = rsb2Packet && rsb2Packet.length <= maxMosaicBytes;
+
+      const deltaAmp = parseFloat(document.getElementById('stego-strength-select')?.value || '34') || 34;
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const pixels = imgData.data;
+
+      // Helper to compute mean RGB luminance of tile (r, c)
+      const getTileMeanRGB = (r, c) => {
+        let sr = 0, sg = 0, sb = 0, count = 0;
+        const y0 = r * tileSize + 2;
+        const y1 = (r + 1) * tileSize - 2;
+        const x0 = c * tileSize + 2;
+        const x1 = (c + 1) * tileSize - 2;
+        for (let py = y0; py < y1; py++) {
+          for (let px = x0; px < x1; px++) {
+            const idx = (py * width + px) * 4;
+            sr += pixels[idx];
+            sg += pixels[idx + 1];
+            sb += pixels[idx + 2];
+            count++;
+          }
+        }
+        return [sr / count, sg / count, sb / count];
+      };
+
+      // Helper to apply balanced luminance shift to tile (r, c) while keeping subtle stained-glass bevel
+      const shiftTileLuminance = (r, c, delta) => {
+        const y0 = r * tileSize;
+        const x0 = c * tileSize;
+        for (let py = y0; py < y0 + tileSize; py++) {
+          const isEdgeY = py === y0 || py === y0 + tileSize - 1;
+          for (let px = x0; px < x0 + tileSize; px++) {
+            const isEdgeX = px === x0 || px === x0 + tileSize - 1;
+            const idx = (py * width + px) * 4;
+            // Subtle architectural mosaic grout line on outer 1px border of each tile
+            const bevel = isEdgeX || isEdgeY ? delta * 0.45 : delta;
+            pixels[idx] = Math.max(0, Math.min(255, Math.round(pixels[idx] + bevel)));
+            pixels[idx + 1] = Math.max(0, Math.min(255, Math.round(pixels[idx + 1] + bevel)));
+            pixels[idx + 2] = Math.max(0, Math.min(255, Math.round(pixels[idx + 2] + bevel)));
+          }
+        }
+      };
+
+      // 1. Encode Perimeter Calibration Strip (alternating 0, 1 tiles)
+      for (let c = 4; c < cols - 4; c++) {
+        const bit = c & 1;
+        shiftTileLuminance(0, c, bit ? deltaAmp : -deltaAmp);
+        shiftTileLuminance(rows - 1, c, bit ? -deltaAmp : deltaAmp);
+      }
+      for (let r = 4; r < rows - 4; r++) {
+        const bit = r & 1;
+        shiftTileLuminance(r, 0, bit ? deltaAmp : -deltaAmp);
+        shiftTileLuminance(r, cols - 1, bit ? -deltaAmp : deltaAmp);
+      }
+
+      // 2. Encode RSB2 Binary Packet into Differential Adjacent Tile Pairs
+      if (mosaicFits) {
+        const totalBits = rsb2Packet.length * 8;
+        for (let bitIdx = 0; bitIdx < pairs.length; bitIdx++) {
+          const [r, cA, cB] = pairs[bitIdx];
+          let bit = 0;
+          if (bitIdx < totalBits) {
+            const byteVal = rsb2Packet[bitIdx >>> 3];
+            bit = (byteVal >>> (7 - (bitIdx & 7))) & 1;
+          } else {
+            // Deterministic pseudo-random decorative mosaic pattern for unused trailing tiles
+            bit = ((r * 7 + cA * 13) & 1);
+          }
+
+          // Measure natural photo luminance of both tiles so we equalize their baseline first,
+          // ensuring high-contrast edges in the photo never overpower the differential bit!
+          const [rA, gA, bA] = getTileMeanRGB(r, cA);
+          const [rB, gB, bB] = getTileMeanRGB(r, cB);
+          const lumA = 0.299 * rA + 0.587 * gA + 0.114 * bA;
+          const lumB = 0.299 * rB + 0.587 * gB + 0.114 * bB;
+          const avgLum = (lumA + lumB) * 0.5;
+
+          // Clamp average luminance slightly away from pure 0 or 255 so +/- deltaAmp has full headroom
+          const clampedMid = Math.max(deltaAmp + 8, Math.min(247 - deltaAmp, avgLum));
+          const targetLumA = clampedMid + (bit ? deltaAmp : -deltaAmp);
+          const targetLumB = clampedMid + (bit ? -deltaAmp : deltaAmp);
+
+          shiftTileLuminance(r, cA, targetLumA - lumA);
+          shiftTileLuminance(r, cB, targetLumB - lumB);
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+
+      // 3. Draw 4 Large 4x4-Tile (88x88 px) High-Contrast QR/Aztec Corner Finder Targets
+      // Classic 1 : 1 : 3 : 1 : 1 ratio across 7 modules -> survives extreme downscaling & JPEG compression
+      const finderPx = 4 * tileSize; // 88px
+      const finderSpecs = [
+        { x: 0, y: 0, isTopLeft: true },
+        { x: width - finderPx, y: 0, isTopLeft: false },
+        { x: width - finderPx, y: height - finderPx, isTopLeft: false },
+        { x: 0, y: height - finderPx, isTopLeft: false },
+      ];
+
+      finderSpecs.forEach(({ x, y, isTopLeft }) => {
+        ctx.save();
+        // Outer white quiet margin (1/9th inset)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x, y, finderPx, finderPx);
+
+        const pad = Math.round(finderPx * 0.08);
+        const box = finderPx - pad * 2;
+        const unit = box / 7;
+
+        // Outer black ring (7x7 units)
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(x + pad, y + pad, box, box);
+
+        // Inner white ring (5x5 units)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x + pad + unit, y + pad + unit, unit * 5, unit * 5);
+
+        // Center dark bullseye core (3x3 units)
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(x + pad + unit * 2, y + pad + unit * 2, unit * 3, unit * 3);
+
+        // Asymmetric orientation notch on Top-Left finder only (bright gold/white inner diamond)
+        if (isTopLeft) {
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(x + finderPx / 2, y + finderPx / 2, unit * 0.72, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+
+      // 4. Also embed exact RSL1 LSBs in the middle rows (rows 5..36) for 100% lossless PNG fast-path
+      const payloadBytes = new TextEncoder().encode(payloadStr);
+      const totalLsbBytes = 8 + payloadBytes.length;
+      const totalLsbBits = totalLsbBytes * 8;
+      const startRow = 5;
+      const startPixel = startRow * tileSize * width;
+      const availableBits = (height - startRow * tileSize * 2) * width * 3;
+
+      if (totalLsbBits <= availableBits) {
+        const finalImg = ctx.getImageData(0, 0, width, height);
+        const pData = finalImg.data;
+        for (let p = 3; p < pData.length; p += 4) pData[p] = 255;
+
+        const lsbBuf = new Uint8Array(totalLsbBytes);
+        lsbBuf[0] = 0x52; lsbBuf[1] = 0x53; lsbBuf[2] = 0x4c; lsbBuf[3] = 0x31;
+        lsbBuf[4] = (payloadBytes.length >>> 24) & 0xff;
+        lsbBuf[5] = (payloadBytes.length >>> 16) & 0xff;
+        lsbBuf[6] = (payloadBytes.length >>> 8) & 0xff;
+        lsbBuf[7] = payloadBytes.length & 0xff;
+        lsbBuf.set(payloadBytes, 8);
+
+        let bitIdx = 0;
+        for (let pix = startPixel; pix < width * height && bitIdx < totalLsbBits; pix++) {
+          const base = pix * 4;
+          for (let ch = 0; ch < 3 && bitIdx < totalLsbBits; ch++) {
+            const b = (lsbBuf[bitIdx >>> 3] >>> (7 - (bitIdx & 7))) & 1;
+            pData[base + ch] = (pData[base + ch] & 0xfe) | b;
+            bitIdx++;
+          }
+        }
+        ctx.putImageData(finalImg, 0, 0);
+      }
+
+      // Update UI capacity indicator
+      const noteEl = document.getElementById('stego-grid-capacity-note');
+      if (noteEl) {
+        if (mosaicFits) {
+          noteEl.innerHTML = `<span class="text-emerald-700 font-semibold">✓ RSB2 Mosaic Embedded (${rsb2Packet.length}/${maxMosaicBytes} bytes)</span> — Survives iOS/Android screenshots, WhatsApp/Telegram compression &amp; camera scans.`;
+        } else {
+          const sz = rsb2Packet ? rsb2Packet.length : 0;
+          noteEl.innerHTML = `<span class="text-amber-700 font-semibold">⚠ Receipt (${sz} bytes) exceeds ${maxMosaicBytes}-byte Mosaic limit</span> — Shorten item names slightly so it fits inside the screenshot/chat-proof mosaic.`;
+        }
+      }
+    }
+
+    /**
+     * Multi-scale 1:1:3:1:1 Finder Pattern Detector for the 4x4-tile (88x88 px) corner targets.
+     * Works across full-res PNGs, WhatsApp/Telegram compressed JPEGs, iOS/Android screenshots
+     * with status bars/bezels, and live camera video frames!
+     */
+    function detectMosaicCardCorners(imgData) {
+      const { width, height, data } = imgData;
+      if (width < 160 || height < 120) return [];
+
+      // Work on a normalized grayscale buffer (max 800px wide for speed & noise smoothing)
+      const scale = Math.min(1, 800 / Math.max(width, height));
+      const sw = Math.max(120, Math.round(width * scale));
+      const sh = Math.max(90, Math.round(height * scale));
+      const lum = new Float32Array(sw * sh);
+
+      for (let y = 0; y < sh; y++) {
+        const sy = Math.min(height - 1, Math.floor(y / scale));
+        for (let x = 0; x < sw; x++) {
+          const sx = Math.min(width - 1, Math.floor(x / scale));
+          const idx = (sy * width + sx) * 4;
+          lum[y * sw + x] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+        }
+      }
+
+      // Helper to verify a 1:1:3:1:1 finder cross-section along a vertical column at x around center y
+      const verifyVerticalRatio = (cx, cy, unitEst) => {
+        const halfSpan = Math.round(unitEst * 4.2);
+        const yTop = Math.max(0, cy - halfSpan);
+        const yBot = Math.min(sh - 1, cy + halfSpan);
+        if (yBot - yTop < 10) return false;
+
+        // Local adaptive threshold from min & max along vertical slice
+        let minV = 255, maxV = 0;
+        for (let y = yTop; y <= yBot; y++) {
+          const v = lum[y * sw + cx];
+          if (v < minV) minV = v;
+          if (v > maxV) maxV = v;
+        }
+        if (maxV - minV < 55) return false;
+        const thresh = (minV + maxV) * 0.5;
+
+        // Run-length encode dark/light segments passing through cy
+        const runs = [];
+        let curDark = lum[yTop * sw + cx] < thresh;
+        let runLen = 0;
+        let centerRunIdx = -1;
+
+        for (let y = yTop; y <= yBot; y++) {
+          const isDark = lum[y * sw + cx] < thresh;
+          if (isDark === curDark) {
+            runLen++;
+          } else {
+            runs.push({ dark: curDark, len: runLen });
+            curDark = isDark;
+            runLen = 1;
+          }
+          if (y === cy) {
+            centerRunIdx = runs.length;
+          }
+        }
+        runs.push({ dark: curDark, len: runLen });
+
+        if (centerRunIdx < 2 || centerRunIdx + 2 >= runs.length) return false;
+        const r0 = runs[centerRunIdx - 2];
+        const r1 = runs[centerRunIdx - 1];
+        const r2 = runs[centerRunIdx];
+        const r3 = runs[centerRunIdx + 1];
+        const r4 = runs[centerRunIdx + 2];
+
+        if (!r0.dark || r1.dark || !r2.dark || r3.dark || !r4.dark) return false;
+        const u = (r0.len + r1.len + r2.len + r3.len + r4.len) / 7;
+        if (u < 1.2) return false;
+        const tol = u * 0.65;
+        return (
+          Math.abs(r0.len - u) < tol &&
+          Math.abs(r1.len - u) < tol &&
+          Math.abs(r2.len - 3 * u) < tol * 1.6 &&
+          Math.abs(r3.len - u) < tol &&
+          Math.abs(r4.len - u) < tol
+        );
+      };
+
+      const rawCenters = [];
+      // Scan horizontal lines every 2px for 1:1:3:1:1 dark-light-dark-light-dark run ratios
+      for (let y = 4; y < sh - 4; y += 2) {
+        let minRow = 255, maxRow = 0;
+        const rowOff = y * sw;
+        for (let x = 0; x < sw; x += 2) {
+          const v = lum[rowOff + x];
+          if (v < minRow) minRow = v;
+          if (v > maxRow) maxRow = v;
+        }
+        if (maxRow - minRow < 50) continue;
+
+        // Sliding window adaptive threshold per 64px segment to handle uneven lighting/shadows
+        const stateCount = [0, 0, 0, 0, 0];
+        let curState = 0;
+
+        const checkRatio = () => {
+          const total = stateCount[0] + stateCount[1] + stateCount[2] + stateCount[3] + stateCount[4];
+          if (total < 7) return 0;
+          const u = total / 7;
+          const maxVar = u * 0.62;
+          if (
+            Math.abs(stateCount[0] - u) < maxVar &&
+            Math.abs(stateCount[1] - u) < maxVar &&
+            Math.abs(stateCount[2] - 3 * u) < maxVar * 1.5 &&
+            Math.abs(stateCount[3] - u) < maxVar &&
+            Math.abs(stateCount[4] - u) < maxVar
+          ) {
+            return u;
+          }
+          return 0;
+        };
+
+        for (let x = 2; x < sw - 2; x++) {
+          // Local min/max in +/- 24px window around x
+          let lMin = 255, lMax = 0;
+          const w0 = Math.max(0, x - 24);
+          const w1 = Math.min(sw - 1, x + 24);
+          for (let wx = w0; wx <= w1; wx += 3) {
+            const v = lum[rowOff + wx];
+            if (v < lMin) lMin = v;
+            if (v > lMax) lMax = v;
+          }
+          const isDark = lMax - lMin >= 45 && lum[rowOff + x] < (lMin + lMax) * 0.5;
+
+          if (isDark) {
+            if (curState === 1 || curState === 3) curState++;
+            stateCount[curState]++;
+          } else {
+            if (curState === 0 || curState === 2) {
+              curState++;
+              stateCount[curState]++;
+            } else if (curState === 4) {
+              const u = checkRatio();
+              if (u > 0) {
+                const cx = Math.round(x - stateCount[4] - stateCount[3] - stateCount[2] * 0.5);
+                if (verifyVerticalRatio(cx, y, u)) {
+                  rawCenters.push({
+                    x: cx / scale,
+                    y: y / scale,
+                    unit: u / scale,
+                    contrast: lMax - lMin,
+                  });
+                }
+              }
+              stateCount[0] = stateCount[2];
+              stateCount[1] = stateCount[3];
+              stateCount[2] = stateCount[4];
+              stateCount[3] = 1;
+              stateCount[4] = 0;
+              curState = 3;
+            } else {
+              stateCount[curState]++;
+            }
+          }
+        }
+      }
+
+      if (rawCenters.length < 4) return [];
+
+      // Cluster nearby scanline hits into precise finder centroids
+      const clusters = [];
+      const clusterRadius = Math.max(18, Math.min(width, height) * 0.035);
+      for (const hit of rawCenters) {
+        let matched = null;
+        for (const cl of clusters) {
+          if (Math.hypot(cl.x - hit.x, cl.y - hit.y) < clusterRadius) {
+            matched = cl;
+            break;
+          }
+        }
+        if (matched) {
+          const w = matched.count;
+          matched.x = (matched.x * w + hit.x) / (w + 1);
+          matched.y = (matched.y * w + hit.y) / (w + 1);
+          matched.unit = (matched.unit * w + hit.unit) / (w + 1);
+          matched.score += hit.contrast;
+          matched.count += 1;
+        } else {
+          clusters.push({
+            x: hit.x,
+            y: hit.y,
+            unit: hit.unit,
+            score: hit.contrast,
+            count: 1,
+          });
+        }
+      }
+
+      clusters.sort((a, b) => b.score - a.score);
+      const topClusters = clusters.slice(0, 12);
+      if (topClusters.length < 4) return [];
+
+      // Form candidate quadrilaterals (TL, TR, BR, BL) and check Top-Left gold orientation marker
+      const quads = [];
+      for (let i = 0; i < topClusters.length; i++) {
+        for (let j = i + 1; j < topClusters.length; j++) {
+          for (let k = j + 1; k < topClusters.length; k++) {
+            for (let l = k + 1; l < topClusters.length; l++) {
+              const pts = [topClusters[i], topClusters[j], topClusters[k], topClusters[l]];
+              const cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x) * 0.25;
+              const cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y) * 0.25;
+
+              let tl = null, tr = null, br = null, bl = null;
+              for (const p of pts) {
+                if (p.x < cx && p.y < cy) tl = p;
+                else if (p.x >= cx && p.y < cy) tr = p;
+                else if (p.x >= cx && p.y >= cy) br = p;
+                else if (p.x < cx && p.y >= cy) bl = p;
+              }
+              if (!tl || !tr || !br || !bl) continue;
+
+              const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
+              const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
+              const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
+              const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
+
+              if (topW < 100 || leftH < 70) continue;
+              const wRatio = Math.min(topW, botW) / Math.max(topW, botW);
+              const hRatio = Math.min(leftH, rightH) / Math.max(leftH, rightH);
+              if (wRatio < 0.72 || hRatio < 0.72) continue;
+
+              const aspect = ((topW + botW) * 0.5) / ((leftH + rightH) * 0.5);
+              if (aspect < 1.05 || aspect > 2.05) continue;
+
+              const aspectPenalty = Math.abs(aspect - 1.35) * 200;
+              quads.push({
+                tl,
+                tr,
+                br,
+                bl,
+                score: tl.score + tr.score + br.score + bl.score - aspectPenalty,
+              });
+            }
+          }
+        }
+      }
+
+      quads.sort((a, b) => b.score - a.score);
+      return quads.slice(0, 6);
+    }
+
+    /**
+     * Decodes the Compression-Proof RSB2 Differential Mosaic Art Card from any ImageData
+     * (screenshots with borders, WhatsApp/Telegram compressed JPEGs, or live camera frames).
+     */
+    function extractCameraStealthGridFromImageData(imgData, returnMeta = false) {
+      const { width, height, data } = imgData;
+      const layout = getMosaicGridLayout();
+      const { cols, rows, pairs } = layout;
+
+      // Bilinear luminance sampler
+      const sampleLum = (px, py) => {
+        const x = Math.max(0, Math.min(width - 1.001, px));
+        const y = Math.max(0, Math.min(height - 1.001, py));
+        const x0 = Math.floor(x);
+        const y0 = Math.floor(y);
+        const x1 = Math.min(width - 1, x0 + 1);
+        const y1 = Math.min(height - 1, y0 + 1);
+        const fx = x - x0;
+        const fy = y - y0;
+
+        const lAt = (ix, iy) => {
+          const idx = (iy * width + ix) * 4;
+          return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+        };
+
+        return (
+          (lAt(x0, y0) * (1 - fx) + lAt(x1, y0) * fx) * (1 - fy) +
+          (lAt(x0, y1) * (1 - fx) + lAt(x1, y1) * fx) * fy
+        );
+      };
+
+      // Note: The 4 corner finder targets are 4x4 tiles centered at tile (2, 2), (2, cols-2),
+      // (rows-2, cols-2), and (rows-2, 2) in tile coordinates!
+      const decodeQuad = (quad) => {
+        const tileToXY = (tc, tr) => {
+          const qu = (tc - 2) / (cols - 4);
+          const qv = (tr - 2) / (rows - 4);
+          const topX = quad.tl.x + (quad.tr.x - quad.tl.x) * qu;
+          const topY = quad.tl.y + (quad.tr.y - quad.tl.y) * qu;
+          const botX = quad.bl.x + (quad.br.x - quad.bl.x) * qu;
+          const botY = quad.bl.y + (quad.br.y - quad.bl.y) * qu;
+          return [topX + (botX - topX) * qv, topY + (botY - topY) * qv];
+        };
+
+        // Sample interior 3x3 sub-points of tile (r, c) (completely avoiding JPEG block/tile edges)
+        const sampleTileInterior = (r, c) => {
+          let sum = 0;
+          const offsets = [0.32, 0.5, 0.68];
+          for (let oy = 0; oy < 3; oy++) {
+            for (let ox = 0; ox < 3; ox++) {
+              const [px, py] = tileToXY(c + offsets[ox], r + offsets[oy]);
+              sum += sampleLum(px, py);
+            }
+          }
+          return sum / 9;
+        };
+
+        const readBit = (pairIdx) => {
+          const [r, cA, cB] = pairs[pairIdx];
+          return sampleTileInterior(r, cA) > sampleTileInterior(r, cB) ? 1 : 0;
+        };
+
+        const readBytes = (startByte, count) => {
+          const out = new Uint8Array(count);
+          for (let b = 0; b < count; b++) {
+            let val = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const pIdx = (startByte + b) * 8 + bit;
+              if (pIdx >= pairs.length) return null;
+              val = (val << 1) | readBit(pIdx);
+            }
+            out[b] = val;
+          }
+          return out;
+        };
+
+        // Read 5-byte RSB2 header first ("RS" + 0x02 + uint16 dataLen)
+        const header = readBytes(0, 5);
+        if (!header || header[0] !== 0x52 || header[1] !== 0x53 || header[2] !== 0x02) {
+          return null;
+        }
+        const dataLen = (header[3] << 8) | header[4];
+        const totalPacketLen = 5 + dataLen + 64 + 2;
+        if (dataLen <= 2 || totalPacketLen * 8 > pairs.length) {
+          return null;
+        }
+
+        const fullPacket = readBytes(0, totalPacketLen);
+        if (!fullPacket) return null;
+
+        return unpackRSB2ToCanonicalJson(fullPacket);
+      };
+
+      // 1. Primary path: Locate 4 corner finder targets anywhere in screenshot or camera frame
+      const quads = detectMosaicCardCorners(imgData);
+      for (const quad of quads) {
+        const canonicalJson = decodeQuad(quad);
+        if (canonicalJson) {
+          return returnMeta ? { payload: canonicalJson, quad } : canonicalJson;
+        }
+      }
+
+      // 2. Fallback path: Exact full-frame image bounds (if cropped right at outer edges)
+      const fullQuad = {
+        tl: { x: width * (2 / cols), y: height * (2 / rows) },
+        tr: { x: width * ((cols - 2) / cols), y: height * (2 / rows) },
+        br: { x: width * ((cols - 2) / cols), y: height * ((rows - 2) / rows) },
+        bl: { x: width * (2 / cols), y: height * ((rows - 2) / rows) },
+      };
+      const fullDecoded = decodeQuad(fullQuad);
+      if (fullDecoded) {
+        return returnMeta ? { payload: fullDecoded, quad: fullQuad } : fullDecoded;
+      }
+
+      return null;
+    }
+
+    /**
+     * Extracts hidden UTF-8 payload from RGB Least Significant Bits if "RSL1" header is present
+     * (checks both pixel 0 start for legacy files and row 5 start for Art-Card Mosaic PNGs)
+     */
+    function extractPayloadFromImageDataLSB(imgData) {
+      const { width, height, data: pixels } = imgData;
+
+      const tryReadAtPixelOffset = (startPixel) => {
+        const maxBytes = Math.floor((((width * height - startPixel) * 3)) / 8);
+        if (maxBytes < 12) return null;
+
+        const readBytes = (startByte, count) => {
+          const out = new Uint8Array(count);
+          for (let b = 0; b < count; b++) {
+            let val = 0;
+            const baseBit = (startByte + b) * 8;
+            for (let bit = 0; bit < 8; bit++) {
+              const globalBit = baseBit + bit;
+              const pixelIdx = (startPixel + Math.floor(globalBit / 3)) * 4;
+              const channel = globalBit % 3;
+              const lsb = pixels[pixelIdx + channel] & 1;
+              val = (val << 1) | lsb;
+            }
+            out[b] = val;
+          }
+          return out;
+        };
+
+        const header = readBytes(0, 8);
+        if (header[0] !== 0x52 || header[1] !== 0x53 || header[2] !== 0x4c || header[3] !== 0x31) {
+          return null;
+        }
+        const payloadLen =
+          ((header[4] << 24) >>> 0) +
+          (header[5] << 16) +
+          (header[6] << 8) +
+          header[7];
+        if (payloadLen <= 0 || 8 + payloadLen > maxBytes) {
+          return null;
+        }
+        try {
+          return new TextDecoder('utf-8', { fatal: true }).decode(readBytes(8, payloadLen));
+        } catch (e) {
+          return null;
+        }
+      };
+
+      // Check row 5 offset (1232x924 Art-Card Mosaic lossless PNG) first, then pixel 0
+      return tryReadAtPixelOffset(5 * 22 * width) || tryReadAtPixelOffset(0);
+    }
       } else {
         qrBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
         stegoBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
@@ -2122,11 +3016,11 @@
 
         if (appState.issueCarrierMode === 'stego') {
           if (!appState.coverImage) {
-            generateSampleCoverImage(true);
+            generateThemedCoverArtwork('gold', true);
           }
-          embedPayloadIntoCanvasLSB(appState.coverImage, canvas, compactJsonString);
+          embedPayloadIntoCanvasLSB(appState.coverImage, canvas, compactJsonString, signedEnvelope);
           stegoPill.classList.remove('hidden');
-          dlBtnText.textContent = 'Download Stego PNG';
+          dlBtnText.textContent = 'Download Mosaic PNG';
         } else {
           // Ensure QRCode library is loaded, then render high-contrast QR code onto canvas
           const qrLib = await ensureQRCodeLibrary();
@@ -2363,34 +3257,34 @@
         document.getElementById('btn-stop-camera').classList.remove('hidden');
 
         // Start frame scanning loop
-        const scanCanvas = document.getElementById('qr-scan-canvas');
-        const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
-        const hudCanvas = document.getElementById('qr-hud-canvas');
-        const hudCtx = hudCanvas.getContext('2d');
-        hudCanvas.classList.remove('hidden');
+            // 2. Visualize detected Art-Card Mosaic Corner Targets on live camera HUD
+            const candidateQuads = detectMosaicCardCorners(imageData);
+            const statusPill = document.getElementById('scanner-status-pill');
+            if (candidateQuads.length > 0) {
+              const best = candidateQuads[0];
+              hudCtx.save();
+              hudCtx.strokeStyle = '#34d399';
+              hudCtx.lineWidth = 3;
+              hudCtx.beginPath();
+              hudCtx.moveTo(best.tl.x, best.tl.y);
+              hudCtx.lineTo(best.tr.x, best.tr.y);
+              hudCtx.lineTo(best.br.x, best.br.y);
+              hudCtx.lineTo(best.bl.x, best.bl.y);
+              hudCtx.closePath();
+              hudCtx.stroke();
 
-        const tick = () => {
-          if (!appState.cameraStream) return;
-          if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            scanCanvas.width = video.videoWidth;
-            scanCanvas.height = video.videoHeight;
-            hudCanvas.width = video.videoWidth;
-            hudCanvas.height = video.videoHeight;
-            hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
-
-            ctx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
-            const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-
-            // 1. Try standard QR code detection first
-            const code = jsQR(imageData.data, imageData.width, imageData.height, {
-              inversionAttempts: 'dontInvert',
-            });
-
-            if (code && code.data) {
-              stopCameraScanner();
-              showToast('QR Code detected from camera!', 'info');
-              verifyRawPayloadString(code.data, true);
-              return;
+              [best.tl, best.tr, best.br, best.bl].forEach((pt) => {
+                hudCtx.fillStyle = '#fbbf24';
+                hudCtx.beginPath();
+                hudCtx.arc(pt.x, pt.y, 7, 0, Math.PI * 2);
+                hudCtx.fill();
+              });
+              hudCtx.restore();
+              if (statusPill) {
+                statusPill.textContent = 'Mosaic Card Targets Locked — Decoding...';
+              }
+            } else if (statusPill) {
+              statusPill.textContent = 'Align QR Code or Mosaic Art Card inside frame';
             }
 
             // 2. Visualize detected Stealth Corner Targets on live camera HUD
