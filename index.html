@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ReceiptSeal — Cryptographic Purchase Receipt QR Generator & Verifier</title>
-  <!-- Google Font: Inter & JetBrains Mono -->
+  <title>ReceiptSeal — Cryptographic Purchase Receipt QR &amp; Mosaic Art-Card System</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -22,46 +22,35 @@
       },
     };
   </script>
-  <!-- QR Code Generator Library (with multi-CDN fallback) -->
+  <!-- QR Code Generator Library (Primary CDN with runtime fallback) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
   <!-- jsQR Library for Camera & Image QR Decoding -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
-    /* Custom subtle scrollbar and utility transitions */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     @keyframes scanline {
       0% { transform: translateY(0%); }
-      50% { transform: translateY(220px); }
+      50% { transform: translateY(200px); }
       100% { transform: translateY(0%); }
     }
     .scanner-laser {
-      animation: scanline 2.6s ease-in-out infinite;
+      animation: scanline 2.4s ease-in-out infinite;
     }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
 
-  <!-- Toast Notification Banner (Replaces alert) -->
+  <!-- Toast Notification Stack -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
 
   <!-- Top Navigation Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 gap-3">
-        <!-- Brand Logo & Title -->
+        <!-- Brand -->
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -69,71 +58,64 @@
             </svg>
           </div>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <h1 class="text-lg font-bold tracking-tight text-slate-900">ReceiptSeal</h1>
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                100% Offline • No Expiry
+                100% Client-Side • No Expiry
               </span>
             </div>
-            <p class="text-xs text-slate-500">ECDSA P-256 Cryptographic Receipt QR Generator &amp; Verifier</p>
+            <p class="text-xs text-slate-500">ECDSA P-256 Receipt QR &amp; Compression-Proof Mosaic Art-Card Engine</p>
           </div>
         </div>
 
-        <!-- Active Cryptographic Key Status Pill -->
-        <div class="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+        <!-- Active Cryptographic Key Status Badge -->
+        <div class="flex items-center gap-2.5 bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
           <span id="header-key-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-          <div class="flex flex-col">
-            <span id="header-key-mode" class="font-semibold text-slate-800">Full Issuer + Verifier Keypair</span>
-            <span id="header-key-fp" class="font-mono text-[11px] text-slate-500">FP: Initializing...</span>
+          <div class="flex flex-col min-w-0">
+            <span id="header-key-mode" class="font-semibold text-slate-800 truncate">Full Issuer + Verifier Keypair</span>
+            <span id="header-key-fp" class="font-mono text-[11px] text-slate-500 truncate">FP: Initializing...</span>
           </div>
-          <button onclick="switchTab('keys')" class="ml-2 text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-2">
+          <button type="button" onclick="switchTab('keys')" class="ml-1 text-indigo-600 hover:text-indigo-800 font-semibold underline underline-offset-2 shrink-0">
             Keys
           </button>
         </div>
       </div>
 
-      <!-- Tab Navigation Bar -->
+      <!-- Main Navigation Tabs -->
       <nav class="flex space-x-1 overflow-x-auto pb-0 -mb-px" aria-label="Tabs">
-        <button id="tab-btn-issue" onclick="switchTab('issue')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-semibold text-sm flex items-center gap-2 transition-colors border-indigo-600 text-indigo-600">
+        <button type="button" id="tab-btn-issue" onclick="switchTab('issue')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-semibold text-sm flex items-center gap-2 transition-colors border-indigo-600 text-indigo-600">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           <span>Issue &amp; Sign Receipt</span>
         </button>
 
-        <button id="tab-btn-verify" onclick="switchTab('verify')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300">
+        <button type="button" id="tab-btn-verify" onclick="switchTab('verify')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>Verify Receipt</span>
         </button>
 
-        <button id="tab-btn-keys" onclick="switchTab('keys')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300">
+        <button type="button" id="tab-btn-keys" onclick="switchTab('keys')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
           </svg>
-          <span>Key Management</span>
-        </button>
-
-        <button id="tab-btn-vault" onclick="switchTab('vault')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-          </svg>
-          <span>Saved Receipts</span>
+          <span>Key Management &amp; Vault</span>
           <span id="vault-count-badge" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-slate-200 text-slate-700 font-semibold">0</span>
         </button>
       </nav>
     </div>
   </header>
 
-  <!-- Main Workspace Content -->
+  <!-- Main Workspace -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
     <!-- =================================================================== -->
     <!-- TAB 1: ISSUE & SIGN RECEIPT                                         -->
     <!-- =================================================================== -->
     <section id="view-issue" class="tab-view space-y-6">
-      <!-- Warning if Private Key is missing (Verifier-Only Mode) -->
+      <!-- Verifier-Only Mode Banner -->
       <div id="no-privkey-alert" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div class="flex items-start gap-3">
           <svg class="w-5 h-5 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -141,10 +123,10 @@
           </svg>
           <div>
             <h3 class="text-sm font-semibold text-amber-900">Verifier-Only Mode Active (No Private Key Loaded)</h3>
-            <p class="text-xs text-amber-800 mt-0.5">You currently have only a Public Key loaded. Generate a new key pair or import a Private Key in Key Management to sign receipts.</p>
+            <p class="text-xs text-amber-800 mt-0.5">Generate a new key pair or import a Private Key JWK in Key Management to sign receipts.</p>
           </div>
         </div>
-        <button onclick="switchTab('keys')" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shrink-0 transition">
+        <button type="button" onclick="switchTab('keys')" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shrink-0 transition">
           Open Key Management
         </button>
       </div>
@@ -155,20 +137,20 @@
           <div class="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <h2 class="text-base font-bold text-slate-900">Purchase Receipt Details</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Signed permanently with ECDSA P-256. No expiration timestamp is embedded.</p>
+              <p class="text-xs text-slate-500 mt-0.5">Cryptographically signed with ECDSA P-256. No expiration timestamp is embedded.</p>
             </div>
-            <button type="button" onclick="resetIssueForm()" class="text-xs font-medium text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition">
+            <button type="button" onclick="resetIssueForm()" class="text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition">
               Reset Form
             </button>
           </div>
 
-          <!-- Metadata Grid -->
+          <!-- Metadata Fields -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label for="issue-inv-id" class="block text-xs font-semibold text-slate-700 mb-1.5">Invoice / Receipt ID *</label>
               <div class="flex rounded-xl shadow-2xs">
-                <input type="text" id="issue-inv-id" class="block w-full rounded-l-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="INV-2026-8492" />
-                <button type="button" onclick="generateRandomInvoiceId()" title="Generate New ID" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-l-0 border-slate-300 rounded-r-xl text-xs font-semibold text-slate-700 transition">
+                <input type="text" id="issue-inv-id" class="block w-full rounded-l-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="INV-2026-849210" />
+                <button type="button" onclick="generateRandomInvoiceId()" title="Generate Random Invoice ID" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 border border-l-0 border-slate-300 rounded-r-xl text-xs font-semibold text-slate-700 transition">
                   Auto
                 </button>
               </div>
@@ -181,7 +163,7 @@
 
             <div>
               <label for="issue-merchant" class="block text-xs font-semibold text-slate-700 mb-1.5">Merchant / Issuer Name</label>
-              <input type="text" id="issue-merchant" class="block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="e.g., Acme Electronics Ltd." />
+              <input type="text" id="issue-merchant" class="block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="e.g., Acme Digital Store" />
             </div>
 
             <div>
@@ -191,7 +173,6 @@
                 <option value="EUR">EUR (€) — Euro</option>
                 <option value="GBP">GBP (£) — British Pound</option>
                 <option value="MMK">MMK (Ks) — Myanmar Kyat</option>
-                <option value="JPY">JPY (¥) — Japanese Yen</option>
                 <option value="SGD">SGD (S$) — Singapore Dollar</option>
                 <option value="THB">THB (฿) — Thai Baht</option>
               </select>
@@ -199,7 +180,7 @@
           </div>
 
           <!-- Dynamic Line Items -->
-          <div class="space-y-3 pt-2">
+          <div class="space-y-3 pt-1">
             <div class="flex items-center justify-between">
               <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Purchased Items</label>
               <button type="button" onclick="addLineItem()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition">
@@ -210,21 +191,18 @@
               </button>
             </div>
 
-            <!-- Header row on desktop -->
             <div class="hidden sm:grid sm:grid-cols-12 gap-2 px-2 text-[11px] font-semibold text-slate-500 uppercase">
-              <div class="col-span-5">Product / Description</div>
+              <div class="col-span-5">Product Name</div>
               <div class="col-span-2 text-right">Qty</div>
               <div class="col-span-2 text-right">Unit Price</div>
               <div class="col-span-2 text-right">Line Total</div>
               <div class="col-span-1"></div>
             </div>
 
-            <div id="line-items-container" class="space-y-2.5">
-              <!-- Line items injected dynamically -->
-            </div>
+            <div id="line-items-container" class="space-y-2.5"></div>
           </div>
 
-          <!-- Grand Total Bar -->
+          <!-- Grand Total Summary -->
           <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
             <div>
               <span class="text-xs font-medium text-slate-500 block">Grand Total</span>
@@ -235,129 +213,145 @@
             </div>
           </div>
 
-          <!-- Sign & Generate Button -->
-          <!-- Carrier Mode Switcher: Standard QR vs Art-Card Mosaic Embed -->
-          <div class="w-full grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
-            <button type="button" id="carrier-btn-qr" onclick="setIssueCarrierMode('qr')" class="py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5">
-              <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-              </svg>
-              Standard QR
-            </button>
-            <button type="button" id="carrier-btn-stego" onclick="setIssueCarrierMode('stego')" class="py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
-              <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
-              Art-Card Mosaic Embed
-            </button>
-          </div>
-
-          <!-- Cover Artwork & Mosaic Settings (Shown when Art-Card Mosaic Embed mode is active) -->
-          <div id="stego-cover-picker" class="hidden w-full text-left space-y-3 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3.5">
-            <div class="flex flex-wrap items-center justify-between gap-1.5">
-              <span class="text-xs font-bold text-indigo-950">Art-Card Mosaic Carrier</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                Survives Screenshots • WhatsApp/Telegram • Camera
-              </span>
-            </div>
-
-            <!-- Curated Artwork Theme Presets -->
-            <div class="grid grid-cols-3 gap-1.5">
-              <button type="button" onclick="generateThemedCoverArtwork('gold')" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 text-[11px] font-semibold border border-amber-500/40 transition truncate">
-                ✦ Luxury Gold
+          <!-- Carrier Output Mode Selector -->
+          <div class="space-y-3 pt-1">
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Output Seal Format</label>
+            <div class="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-xl">
+              <button type="button" id="carrier-btn-qr" onclick="setIssueCarrierMode('qr')" class="py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5">
+                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                </svg>
+                <span>Mode A: Standard QR Code</span>
               </button>
-              <button type="button" onclick="generateThemedCoverArtwork('emerald')" class="py-1.5 px-2 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 text-[11px] font-semibold border border-emerald-500/40 transition truncate">
-                ✦ Emerald Seal
-              </button>
-              <button type="button" onclick="generateThemedCoverArtwork('cobalt')" class="py-1.5 px-2 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-sky-300 text-[11px] font-semibold border border-sky-500/40 transition truncate">
-                ✦ Cobalt Art
+              <button type="button" id="carrier-btn-mosaic" onclick="setIssueCarrierMode('mosaic')" class="py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
+                </svg>
+                <span>Mode B: Mosaic Art Card</span>
               </button>
             </div>
 
-            <!-- Custom Background Photo Upload -->
-            <label for="stego-cover-input" class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-white hover:bg-indigo-50/40 border border-dashed border-indigo-300 rounded-xl cursor-pointer transition">
-              <div class="min-w-0">
-                <p id="stego-cover-filename" class="text-xs font-semibold text-slate-800 truncate">Luxury Gold Security Card (Default)</p>
-                <p id="stego-cover-dims" class="text-[11px] text-slate-500">Or upload any custom photo to mosaic-blend behind seal</p>
+            <!-- Mode B Configuration Panel (Procedural Art Themes, Photo Upload & Resilience) -->
+            <div id="mosaic-config-panel" class="hidden space-y-3 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-xs font-bold text-indigo-950">RSB2 Compression- &amp; Screenshot-Proof Art Card (1232×924)</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Survives Screenshots • Chat Compression • Rotation
+                </span>
               </div>
-              <span class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold shrink-0">Upload Photo</span>
-              <input id="stego-cover-input" type="file" accept="image/*" onchange="handleCoverImageSelect(event)" class="hidden" />
-            </label>
 
-            <!-- Art Blend & Compression Resilience Controls -->
-            <div class="pt-1.5 border-t border-indigo-200/70 space-y-2">
-              <div class="flex items-center justify-between gap-2">
-                <label for="stego-strength-select" class="text-[11px] font-semibold text-indigo-950">Mosaic Tile Contrast</label>
-                <select id="stego-strength-select" class="rounded-lg border border-indigo-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-800 outline-none focus:border-indigo-500">
-                  <option value="28">Subtle Glass (ΔL 56 — Photo Focus)</option>
-                  <option value="34" selected>Balanced Mosaic (ΔL 68 — Screenshots &amp; Chat)</option>
-                  <option value="42">Ultra-Resilient (ΔL 84 — Heavy JPEG / Print)</option>
+              <!-- Procedural Security Art Themes -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <button type="button" onclick="selectMosaicTheme('emerald')" id="theme-btn-emerald" class="theme-preset-btn py-2 px-2 rounded-xl bg-emerald-950 text-emerald-200 text-[11px] font-semibold border-2 border-indigo-500 transition truncate">
+                  Guilloché Emerald
+                </button>
+                <button type="button" onclick="selectMosaicTheme('indigo')" id="theme-btn-indigo" class="theme-preset-btn py-2 px-2 rounded-xl bg-indigo-950 text-sky-200 text-[11px] font-semibold border border-indigo-400/40 transition truncate">
+                  Holographic Indigo
+                </button>
+                <button type="button" onclick="selectMosaicTheme('gold')" id="theme-btn-gold" class="theme-preset-btn py-2 px-2 rounded-xl bg-stone-900 text-amber-300 text-[11px] font-semibold border border-amber-400/40 transition truncate">
+                  Gold Bullion
+                </button>
+                <button type="button" onclick="selectMosaicTheme('slate')" id="theme-btn-slate" class="theme-preset-btn py-2 px-2 rounded-xl bg-slate-800 text-slate-100 text-[11px] font-semibold border border-slate-500/40 transition truncate">
+                  Minimalist Slate
+                </button>
+              </div>
+
+              <!-- Custom Cover Photo Upload -->
+              <label for="mosaic-cover-input" class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-white hover:bg-indigo-50/40 border border-dashed border-indigo-300 rounded-xl cursor-pointer transition">
+                <div class="min-w-0">
+                  <p id="mosaic-cover-filename" class="text-xs font-semibold text-slate-800 truncate">Theme: Guilloché Emerald Vault (1232×924)</p>
+                  <p id="mosaic-cover-dims" class="text-[11px] text-slate-500">Or upload any custom cover photo to blend behind mosaic tiles</p>
+                </div>
+                <span class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold shrink-0">Upload Photo</span>
+                <input id="mosaic-cover-input" type="file" accept="image/*" onchange="handleMosaicCoverUpload(event)" class="hidden" />
+              </label>
+
+              <!-- Strength Selector -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-indigo-200/70">
+                <label for="mosaic-strength-select" class="text-xs font-semibold text-indigo-950">Mosaic Tile Strength</label>
+                <select id="mosaic-strength-select" class="rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500">
+                  <option value="26">Subtle (ΔL 52 — Photo Clarity Focus)</option>
+                  <option value="34" selected>Balanced (ΔL 68 — Screenshots &amp; Messaging)</option>
+                  <option value="44">High Resilience (ΔL 88 — Heavy JPEG / Camera)</option>
                 </select>
               </div>
 
-              <div>
-                <div class="flex items-center justify-between text-[11px] mb-1">
-                  <label for="stego-photo-clarity" class="font-semibold text-indigo-950">Background Photo Clarity</label>
-                  <span id="stego-photo-clarity-val" class="font-mono font-semibold text-indigo-700">85%</span>
-                </div>
-                <input type="range" id="stego-photo-clarity" min="45" max="100" value="85" oninput="document.getElementById('stego-photo-clarity-val').textContent = this.value + '%'" class="w-full accent-indigo-600 h-1.5 bg-indigo-200 rounded-lg cursor-pointer" />
-              </div>
-
-              <p id="stego-grid-capacity-note" class="text-[11px] text-indigo-900/90 leading-snug">
-                <strong>RSB2 Binary Mosaic Capacity:</strong> 133 bytes (1,064 differential macro-tile pairs). Packs invoice + raw 64-byte ECDSA signature into ~95–120 bytes!
+              <p id="mosaic-capacity-note" class="text-[11px] text-indigo-900 leading-relaxed">
+                <strong>RSB2 Capacity:</strong> Up to 133 binary bytes (1,064 differential 22×22px tile pairs + 4 corner finder targets + lossless RSL1 LSB backup).
               </p>
             </div>
           </div>
 
-          <!-- Placeholder before generation -->
-          <div id="qr-empty-state" class="py-10 px-4 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl w-full bg-slate-50/50">
+          <!-- Primary Action Button -->
+          <button type="button" id="btn-sign-generate" onclick="handleSignAndGenerate()" class="w-full py-3.5 px-5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+            <span id="btn-sign-generate-text">Sign &amp; Generate Receipt QR Code</span>
+          </button>
+        </div>
+
+        <!-- Right Column: Generated Seal Output Preview -->
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Cryptographic Receipt Output</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Permanent offline verification • Zero expiration date</p>
+            </div>
+            <span id="seal-byte-badge" class="hidden px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              0 bytes
+            </span>
+          </div>
+
+          <!-- Empty State before Generation -->
+          <div id="seal-empty-state" class="py-12 px-4 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
             <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
               </svg>
             </div>
             <p id="empty-state-title" class="text-sm font-semibold text-slate-700">No Seal Generated Yet</p>
-            <p id="empty-state-desc" class="text-xs text-slate-500 mt-1 max-w-xs">Fill out the invoice details on the left and click "Sign &amp; Generate Receipt QR Code".</p>
+            <p id="empty-state-desc" class="text-xs text-slate-500 mt-1 max-w-xs">
+              Fill out the invoice details on the left and click "Sign &amp; Generate Receipt QR Code".
+            </p>
           </div>
 
-          <!-- Generated QR / Stego Display -->
-          <div id="qr-result-container" class="hidden w-full flex flex-col items-center space-y-4">
-            <div class="relative p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-xs inline-block max-w-full">
-              <canvas id="generated-qr-canvas" class="hidden"></canvas>
-              <img id="generated-qr-img" alt="Generated ReceiptSeal PNG" class="rounded-lg max-w-full max-h-72 w-auto h-auto mx-auto select-all" />
-              <p class="text-[11px] text-slate-400 mt-1.5">Tip: On iPhone/iPad, tap <strong>Save / Share PNG</strong> or press &amp; hold the image above</p>
-              <span id="stego-active-pill" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+          <!-- Generated Seal Preview Container -->
+          <div id="seal-result-container" class="hidden flex flex-col items-center space-y-4">
+            <div class="p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-xs w-full text-center">
+              <canvas id="generated-seal-canvas" class="hidden"></canvas>
+              <img id="generated-seal-img" alt="Generated ReceiptSeal PNG" class="rounded-xl max-w-full max-h-80 w-auto h-auto mx-auto shadow-2xs select-all" />
+              <p class="text-[11px] text-slate-400 mt-2">
+                iPhone/iPad: Tap <strong>Download / Save PNG</strong> or press &amp; hold the image above to <strong>Save to Photos</strong>
+              </p>
+              <span id="mosaic-active-badge" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 RSB2 Differential Mosaic + LSB • Screenshot &amp; Chat Proof
               </span>
             </div>
 
             <div class="flex flex-wrap items-center justify-center gap-2 w-full">
-              <button type="button" id="btn-download-seal" onclick="downloadGeneratedQR()" class="flex-1 min-w-[140px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
+              <button type="button" onclick="downloadGeneratedSeal()" class="flex-1 min-w-[150px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 <span id="btn-download-seal-text">Download / Save PNG</span>
               </button>
-              <button type="button" onclick="copyGeneratedPayload()" class="flex-1 min-w-[140px] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
+              <button type="button" onclick="copyGeneratedPayload()" class="flex-1 min-w-[130px] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 Copy JSON
               </button>
               <button type="button" onclick="sendGeneratedToVerifier()" class="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Test in Verifier Tab →
+                <span>Test in Verifier Tab →</span>
               </button>
             </div>
 
-            <!-- Compact Raw Payload Viewer -->
+            <!-- Compact Raw Payload Preview -->
             <div class="w-full text-left">
               <div class="flex items-center justify-between mb-1">
-                <span class="text-[11px] font-semibold text-slate-500 uppercase">Encoded QR Payload (Compact JSON)</span>
-                <span class="text-[11px] text-emerald-600 font-medium">Saved to Vault</span>
+                <span class="text-[11px] font-semibold text-slate-500 uppercase">Signed Compact JSON Payload</span>
+                <span class="text-[11px] text-emerald-600 font-semibold">Saved to Vault</span>
               </div>
               <pre id="generated-payload-preview" class="w-full p-3 rounded-xl bg-slate-900 text-slate-100 font-mono text-[11px] overflow-x-auto max-h-36 whitespace-pre-wrap break-all leading-relaxed"></pre>
             </div>
@@ -371,66 +365,65 @@
     <!-- =================================================================== -->
     <section id="view-verify" class="tab-view hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <!-- Left Column: Input Methods (Camera, Image Upload, Text Paste) -->
+        <!-- Left Column: Multi-Mode Input -->
         <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
           <div class="border-b border-slate-100 pb-4">
-            <h2 class="text-base font-bold text-slate-900">Scan or Input Receipt QR</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Verify digital signature offline against the active ECDSA P-256 Public Key.</p>
+            <h2 class="text-base font-bold text-slate-900">Scan or Verify Receipt Seal</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Verifies ECDSA P-256 digital signatures offline from QR codes, Mosaic Art Cards, screenshots, or JSON.</p>
           </div>
 
-          <!-- Input Mode Switcher -->
+          <!-- Verification Input Mode Switcher -->
           <div class="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-xl">
-            <button type="button" id="vmode-btn-camera" onclick="setVerifyInputMode('camera')" class="vmode-btn py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5">
+            <button type="button" id="vmode-btn-camera" onclick="setVerifyInputMode('camera')" class="vmode-btn py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Camera
+              <span>Camera</span>
             </button>
-            <button type="button" id="vmode-btn-upload" onclick="setVerifyInputMode('upload')" class="vmode-btn py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+            <button type="button" id="vmode-btn-upload" onclick="setVerifyInputMode('upload')" class="vmode-btn py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              Image File
+              <span>Image File</span>
             </button>
-            <button type="button" id="vmode-btn-paste" onclick="setVerifyInputMode('paste')" class="vmode-btn py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+            <button type="button" id="vmode-btn-paste" onclick="setVerifyInputMode('paste')" class="vmode-btn py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Paste Text
+              <span>Paste JSON</span>
             </button>
           </div>
 
-          <!-- Method A: Live Camera Scanner -->
+          <!-- Panel A: Live Camera Scanner -->
           <div id="verify-panel-camera" class="space-y-3">
             <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center border border-slate-300">
               <video id="qr-video" class="w-full h-full object-cover hidden" playsinline muted></video>
               <canvas id="qr-scan-canvas" class="hidden"></canvas>
               <canvas id="qr-hud-canvas" class="hidden absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
-              <!-- Scanner Overlay Frame when active -->
+              <!-- Active Viewfinder Overlay -->
               <div id="scanner-overlay" class="hidden absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
-                <div class="w-64 sm:w-72 aspect-[3/2] border-2 border-emerald-400/80 rounded-2xl relative overflow-hidden shadow-[0_0_0_9999px_rgba(15,23,42,0.48)]">
-                  <!-- Corner alignment guides for Stealth Image scanning -->
-                  <span class="absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 border-amber-300"></span>
-                  <span class="absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 border-amber-300"></span>
-                  <span class="absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 border-amber-300"></span>
-                  <span class="absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 border-amber-300"></span>
+                <div class="w-64 sm:w-72 aspect-[4/3] border-2 border-emerald-400/80 rounded-2xl relative overflow-hidden shadow-[0_0_0_9999px_rgba(15,23,42,0.45)]">
+                  <span class="absolute top-1.5 left-1.5 w-3.5 h-3.5 border-t-2 border-l-2 border-amber-300"></span>
+                  <span class="absolute top-1.5 right-1.5 w-3.5 h-3.5 border-t-2 border-r-2 border-amber-300"></span>
+                  <span class="absolute bottom-1.5 left-1.5 w-3.5 h-3.5 border-b-2 border-l-2 border-amber-300"></span>
+                  <span class="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 border-b-2 border-r-2 border-amber-300"></span>
                   <div class="scanner-laser w-full h-0.5 bg-emerald-400 shadow-[0_0_8px_#34d399]"></div>
                 </div>
-                <span id="scanner-status-pill" class="mt-2.5 px-2.5 py-1 rounded-full bg-slate-950/80 text-[11px] font-medium text-emerald-300 border border-emerald-500/30">
-                  Align QR Code or Stealth Image inside frame
+                <span id="scanner-status-pill" class="mt-2.5 px-3 py-1 rounded-full bg-slate-950/85 text-[11px] font-medium text-emerald-300 border border-emerald-500/30">
+                  Align QR Code or Mosaic Art Card inside frame
                 </span>
               </div>
 
-              <!-- Camera Idle Placeholder -->
+              <!-- Idle Placeholder -->
               <div id="camera-placeholder" class="text-center p-6 space-y-2">
                 <div class="w-12 h-12 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <p class="text-xs font-medium text-slate-300">Camera scanner is stopped</p>
+                <p class="text-xs font-medium text-slate-300">Camera scanner is idle</p>
                 <p id="camera-error-msg" class="text-xs text-rose-400 hidden max-w-xs mx-auto"></p>
               </div>
             </div>
@@ -441,7 +434,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Start Camera
+                Start Camera Scanner
               </button>
               <button type="button" id="btn-stop-camera" onclick="stopCameraScanner()" class="hidden flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition">
                 Stop Camera
@@ -450,23 +443,23 @@
             </div>
           </div>
 
-          <!-- Method B: Upload QR or Steganography Image -->
+          <!-- Panel B: Upload Image File -->
           <div id="verify-panel-upload" class="hidden space-y-3">
             <label for="qr-file-input" class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-2xl cursor-pointer bg-slate-50 hover:bg-indigo-50/30 transition p-6 text-center">
               <svg class="w-10 h-10 text-slate-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
               </svg>
-              <span class="text-sm font-semibold text-slate-700">Click to select Receipt Image (Stego PNG or QR PNG/JPG)</span>
-              <span class="text-xs text-slate-500 mt-1">Automatically extracts hidden LSB steganography data or scans QR code</span>
+              <span class="text-sm font-semibold text-slate-700">Select Receipt Image (Original PNG, Screenshot, Chat Photo, or QR)</span>
+              <span class="text-xs text-slate-500 mt-1">Runs 3-stage pipeline: RSL1 LSB → RSB2 Multi-Orientation Mosaic → jsQR</span>
               <input id="qr-file-input" type="file" accept="image/*" onchange="handleQRImageUpload(event)" class="hidden" />
             </label>
           </div>
 
-          <!-- Method C: Paste Raw QR JSON -->
+          <!-- Panel C: Paste Raw JSON -->
           <div id="verify-panel-paste" class="hidden space-y-3">
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label for="verify-raw-input" class="text-xs font-semibold text-slate-700">Raw QR JSON Payload</label>
+                <label for="verify-raw-input" class="text-xs font-semibold text-slate-700">Raw Receipt JSON Payload</label>
                 <button type="button" onclick="simulateTamperInPaste()" class="text-xs font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg transition">
                   ⚡ Simulate Tampering
                 </button>
@@ -478,23 +471,23 @@
             </button>
           </div>
 
-          <!-- Optional Verifier Public Key Override Accordion -->
+          <!-- Optional Verifier Public Key Override -->
           <details class="border border-slate-200 rounded-xl bg-slate-50/70">
             <summary class="px-4 py-3 text-xs font-semibold text-slate-700 cursor-pointer select-none flex items-center justify-between">
-              <span>Verifier Public Key Settings (Optional Override)</span>
+              <span>Verifier Public Key Override (Verify External Merchant Receipts)</span>
               <span class="text-indigo-600 text-[11px]">Expand</span>
             </summary>
-            <div class="px-4 pb-4 pt-1 space-y-2 border-t border-slate-200/70">
-              <p class="text-[11px] text-slate-500">By default, verification uses your active Public Key. You can paste a merchant's Public Key (JWK or Base64url SPKI) below to verify receipts issued by someone else.</p>
-              <textarea id="verify-override-pubkey" rows="3" class="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-[11px] bg-white focus:border-indigo-500 outline-none" placeholder="Leave blank to use active key, or paste Merchant Public Key (JWK or Base64url SPKI)..."></textarea>
-              <div class="flex justify-end gap-2">
+            <div class="px-4 pb-4 pt-2 space-y-2 border-t border-slate-200/70">
+              <p class="text-[11px] text-slate-500">Leave blank to use your active Public Key, or paste another merchant's Public Key (JWK or Base64url SPKI).</p>
+              <textarea id="verify-override-pubkey" rows="3" class="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-[11px] bg-white focus:border-indigo-500 outline-none" placeholder="Paste Merchant Public Key (JWK or Base64url SPKI)..."></textarea>
+              <div class="flex justify-end">
                 <button type="button" onclick="document.getElementById('verify-override-pubkey').value=''; showToast('Cleared override key; using active key.', 'info')" class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900">Clear Override</button>
               </div>
             </div>
           </details>
         </div>
 
-        <!-- Right Column: Cryptographic Verification Verdict & Decoded Receipt -->
+        <!-- Right Column: Verification Result Verdict & Itemized Receipt -->
         <div class="lg:col-span-6 space-y-5">
           <!-- Idle State -->
           <div id="verify-empty-state" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-8 text-center space-y-3">
@@ -505,13 +498,12 @@
             </div>
             <h3 class="text-base font-bold text-slate-900">Ready to Verify</h3>
             <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-              Scan a ReceiptSeal QR code with your camera, upload an image, or paste the raw QR payload. We will mathematically verify the ECDSA P-256 signature.
+              Scan a QR code or Mosaic Art Card with your camera, upload an image/screenshot, or paste the raw JSON payload to verify authenticity via <code class="font-mono bg-slate-100 px-1 rounded">crypto.subtle.verify</code>.
             </p>
           </div>
 
           <!-- Verification Result Card -->
           <div id="verify-result-card" class="hidden bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all">
-            <!-- Unmistakable Status Banner -->
             <div id="verify-status-banner" class="p-5 flex items-start gap-3.5">
               <div id="verify-status-icon" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"></div>
               <div class="flex-1 min-w-0">
@@ -537,7 +529,7 @@
                 </div>
               </div>
 
-              <!-- Itemized Table -->
+              <!-- Itemized Product Table -->
               <div class="overflow-x-auto border border-slate-200 rounded-xl">
                 <table class="min-w-full divide-y divide-slate-200 text-xs">
                   <thead class="bg-slate-50 text-slate-500 font-semibold uppercase">
@@ -558,7 +550,6 @@
                 </table>
               </div>
 
-              <!-- Cryptographic Metadata Footer -->
               <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
                 <span>Algorithm: <strong class="text-slate-700">ECDSA P-256 / SHA-256</strong></span>
                 <span>Expiration: <strong class="text-emerald-700">None (Permanent)</strong></span>
@@ -570,18 +561,19 @@
     </section>
 
     <!-- =================================================================== -->
-    <!-- TAB 3: KEY MANAGEMENT                                               -->
+    <!-- TAB 3: KEY MANAGEMENT & OFFLINE RECEIPT VAULT                       -->
     <!-- =================================================================== -->
     <section id="view-keys" class="tab-view hidden space-y-6">
+      <!-- Cryptographic Key Management Card -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
             <h2 class="text-base font-bold text-slate-900">ECDSA P-256 Cryptographic Key Pair</h2>
             <p class="text-xs text-slate-500 mt-0.5 max-w-2xl">
-              Your keys are generated and stored locally in your browser's <code class="font-mono bg-slate-100 px-1 rounded">localStorage</code> via the native Web Crypto API. Keep your Private Key secret to sign receipts; share your Public Key with verifiers.
+              Generated locally via Web Crypto API and stored in <code class="font-mono bg-slate-100 px-1 rounded">localStorage</code> (<code class="font-mono bg-slate-100 px-1 rounded">receiptseal_keys_v1</code>). Export your Public Key to embed in verifiers, or back up your Private Key JWK.
             </p>
           </div>
-          <button type="button" onclick="generateAndSaveNewKeyPair()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center gap-2 shrink-0">
+          <button type="button" onclick="generateAndSaveNewKeyPair(false)" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center gap-2 shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -589,15 +581,14 @@
           </button>
         </div>
 
-        <!-- Current Key Status Summary -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase block">Active Mode</span>
+            <span class="text-[11px] font-semibold text-slate-400 uppercase block">Active Terminal Role</span>
             <span id="km-mode-label" class="text-sm font-bold text-slate-900 mt-1 block">Issuer + Verifier</span>
           </div>
           <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase block">Curve &amp; Hash</span>
-            <span class="text-sm font-bold text-slate-900 mt-1 block">NIST P-256 (prime256v1) / SHA-256</span>
+            <span class="text-[11px] font-semibold text-slate-400 uppercase block">Curve &amp; Signature Hash</span>
+            <span class="text-sm font-bold text-slate-900 mt-1 block">NIST P-256 / SHA-256</span>
           </div>
           <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
             <span class="text-[11px] font-semibold text-slate-400 uppercase block">Public Key SHA-256 Fingerprint</span>
@@ -607,24 +598,24 @@
 
         <!-- Export Public & Private Keys -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Public Key Export Card -->
+          <!-- Public Key Export -->
           <div class="border border-slate-200 rounded-2xl p-5 space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-1">Safe to Share</span>
-                <h3 class="text-sm font-bold text-slate-900">Public Key (For Verification)</h3>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-1">Safe to Distribute</span>
+                <h3 class="text-sm font-bold text-slate-900">Public Verification Key</h3>
               </div>
             </div>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <div class="flex items-center justify-between">
-                <label class="text-[11px] font-semibold text-slate-500 uppercase">Compact Base64url SPKI (Recommended for Embedding)</label>
+                <label class="text-[11px] font-semibold text-slate-500 uppercase">Compact Base64url SPKI</label>
                 <button type="button" onclick="copyTextById('km-pub-spki', 'Compact Public Key')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Copy</button>
               </div>
               <textarea id="km-pub-spki" readonly rows="2" class="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs text-slate-800 outline-none"></textarea>
             </div>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <div class="flex items-center justify-between">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase">Standard JWK Format</label>
                 <button type="button" onclick="copyTextById('km-pub-jwk', 'Public Key JWK')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Copy</button>
@@ -633,11 +624,11 @@
             </div>
           </div>
 
-          <!-- Private Key Export Card -->
+          <!-- Private Key Export -->
           <div class="border border-slate-200 rounded-2xl p-5 space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 mb-1">Keep Secret</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 mb-1">Keep Confidential</span>
                 <h3 class="text-sm font-bold text-slate-900">Private Signing Key (JWK)</h3>
               </div>
               <button type="button" id="btn-toggle-privkey" onclick="togglePrivateKeyVisibility()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition">
@@ -646,64 +637,46 @@
             </div>
 
             <p class="text-xs text-slate-500">
-              Back up your Private Key JWK to issue authentic receipts from another device. Anyone with this key can sign receipts as you.
+              Back up your Private Key JWK to issue authentic receipts on another device. Anyone possessing this key can sign receipts under your identity.
             </p>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <div class="flex items-center justify-between">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase">Private Key JWK</label>
                 <button type="button" onclick="copyPrivateKeyJWK()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Copy Private JWK</button>
               </div>
-              <textarea id="km-priv-jwk" readonly rows="6" class="w-full rounded-xl border border-slate-200 bg-slate-900 text-emerald-400 p-3 font-mono text-[11px] outline-none" placeholder="••••••••••••••••••••••••••••••••••••••••"></textarea>
+              <textarea id="km-priv-jwk" readonly rows="5" class="w-full rounded-xl border border-slate-200 bg-slate-900 text-emerald-400 p-3 font-mono text-[11px] outline-none" placeholder="••••••••••••••••••••••••••••••••••••••••"></textarea>
             </div>
           </div>
         </div>
 
-        <!-- Import Key Section -->
-        <div class="border-t border-slate-200 pt-6 space-y-3">
-          <h3 class="text-sm font-bold text-slate-900">Import Existing Key (Issuer Private Key or Verifier-Only Public Key)</h3>
-          <p class="text-xs text-slate-500">
-            Paste a previously exported <strong>Private Key JWK</strong> (enables both signing and verifying) or a <strong>Public Key (JWK or Compact Base64url SPKI)</strong> (sets terminal to Verifier-Only mode).
-          </p>
-          <textarea id="km-import-input" rows="3" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder='Paste JWK JSON (e.g. {"kty":"EC","crv":"P-256",...}) or Compact Base64url Public Key...'></textarea>
-          <div class="flex flex-wrap items-center gap-3">
-            <button type="button" onclick="handleImportKey()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition">
-              Import &amp; Activate Key
-            </button>
-          </div>
+        <!-- Import Key -->
+        <div class="border-t border-slate-200 pt-5 space-y-3">
+          <h3 class="text-sm font-bold text-slate-900">Import Key (Private JWK or Verifier Public Key)</h3>
+          <textarea id="km-import-input" rows="3" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder='Paste Private JWK JSON, Public JWK JSON, or Compact Base64url SPKI Public Key...'></textarea>
+          <button type="button" onclick="handleImportKey()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition">
+            Import &amp; Activate Key
+          </button>
         </div>
       </div>
-    </section>
 
-    <!-- =================================================================== -->
-    <!-- TAB 4: SAVED RECEIPTS VAULT (LOCALSTORAGE)                          -->
-    <!-- =================================================================== -->
-    <section id="view-vault" class="tab-view hidden space-y-6">
+      <!-- Saved Offline Receipt Vault Card -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <h2 class="text-base font-bold text-slate-900">Offline Receipt Vault</h2>
-            <p class="text-xs text-slate-500 mt-0.5">All generated and scanned receipts stored locally. Click any receipt to inspect &amp; re-verify its cryptographic signature live.</p>
+            <h2 class="text-base font-bold text-slate-900">Saved Offline Receipt Vault (<code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">receiptseal_vault_v1</code>)</h2>
+            <p class="text-xs text-slate-500 mt-0.5">All generated and verified receipts persisted locally. Click any card to inspect and re-verify live via Web Crypto API.</p>
           </div>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="clearAllVaultReceipts()" class="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold transition">
-              Clear All History
-            </button>
-          </div>
+          <button type="button" onclick="clearAllVaultReceipts()" class="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold transition shrink-0">
+            Clear All History
+          </button>
         </div>
 
-        <!-- Empty Vault State -->
-        <div id="vault-empty-state" class="py-12 text-center space-y-2">
-          <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-          </div>
+        <div id="vault-empty-state" class="py-10 text-center space-y-2">
           <p class="text-sm font-semibold text-slate-700">No Saved Receipts Yet</p>
-          <p class="text-xs text-slate-500">Issued and verified receipts will automatically appear here for offline access.</p>
+          <p class="text-xs text-slate-500">Generated and verified receipts automatically appear here for offline access.</p>
         </div>
 
-        <!-- Vault Grid List -->
         <div id="vault-list-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
     </section>
@@ -714,12 +687,11 @@
   <!-- MODAL: VAULT RECEIPT DETAIL & LIVE RE-VERIFICATION                    -->
   <!-- ===================================================================== -->
   <div id="vault-modal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-2xl w-full overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
-      <!-- Modal Header -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-2xl w-full overflow-hidden my-8">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div>
           <h3 class="text-base font-bold text-slate-900">Stored Receipt Inspection</h3>
-          <p class="text-xs text-slate-500">Live cryptographic re-verification via Web Crypto API</p>
+          <p class="text-xs text-slate-500">Live cryptographic re-verification via <code class="font-mono">crypto.subtle.verify</code></p>
         </div>
         <button type="button" onclick="closeVaultModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -728,9 +700,7 @@
         </button>
       </div>
 
-      <!-- Modal Body -->
       <div class="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-        <!-- Live Verification Banner inside Modal -->
         <div id="modal-verify-banner" class="p-4 rounded-xl border flex items-center gap-3">
           <div id="modal-verify-icon" class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"></div>
           <div>
@@ -740,7 +710,6 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-          <!-- Reconstructed QR Canvas & Long-Press Image -->
           <div class="sm:col-span-5 flex flex-col items-center p-3 bg-slate-50 border border-slate-200 rounded-xl">
             <canvas id="modal-qr-canvas" class="hidden"></canvas>
             <img id="modal-qr-img" alt="Saved Receipt QR Code" class="rounded-lg max-w-full h-auto" />
@@ -749,12 +718,11 @@
             </button>
           </div>
 
-          <!-- Metadata & Summary -->
           <div class="sm:col-span-7 space-y-3">
             <div class="grid grid-cols-2 gap-3 text-xs">
               <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <span class="text-slate-400 font-semibold uppercase text-[10px] block">Invoice ID</span>
-                <span id="modal-inv-id" class="font-mono font-bold text-slate-900 text-sm"></span>
+                <span id="modal-inv-id" class="font-mono font-bold text-slate-900 text-sm break-all"></span>
               </div>
               <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <span class="text-slate-400 font-semibold uppercase text-[10px] block">Date</span>
@@ -768,7 +736,6 @@
           </div>
         </div>
 
-        <!-- Itemized Table -->
         <div class="overflow-x-auto border border-slate-200 rounded-xl">
           <table class="min-w-full divide-y divide-slate-200 text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold uppercase">
@@ -789,14 +756,12 @@
           </table>
         </div>
 
-        <!-- Raw JSON -->
         <div>
-          <span class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Signed Compact QR Payload</span>
+          <span class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Signed Compact JSON Payload</span>
           <pre id="modal-raw-json" class="p-3 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap break-all max-h-28"></pre>
         </div>
       </div>
 
-      <!-- Modal Footer -->
       <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
         <button type="button" id="modal-delete-btn" class="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-100 text-xs font-semibold transition">
           Delete Receipt
@@ -852,28 +817,24 @@
   <!-- APPLICATION JAVASCRIPT ENGINE                                         -->
   <!-- ===================================================================== -->
   <script>
-    /**
-     * ReceiptSeal — 100% Client-Side Cryptographic Purchase Receipt QR System
-     * Uses Web Crypto API (ECDSA P-256 + SHA-256), QRCode.js, and jsQR.
-     */
+    'use strict';
 
-    // Storage Keys
     const STORAGE_KEYS = {
-      KEYPAIR: 'receiptseal_ecdsa_p256_keys_v1',
-      VAULT: 'receiptseal_saved_receipts_v1',
+      KEYPAIR: 'receiptseal_keys_v1',
+      VAULT: 'receiptseal_vault_v1',
     };
 
-    // Global Application State
     const appState = {
-      privateKey: null,       // CryptoKey (ECDSA P-256) or null in Verifier-Only mode
-      publicKey: null,        // CryptoKey (ECDSA P-256)
-      privateJwk: null,       // Exported Private JWK object or null
-      publicJwk: null,        // Exported Public JWK object
-      publicSpkiB64u: '',     // Compact Base64url SPKI public key
-      keyFingerprint: '',     // Short SHA-256 hex fingerprint of public key
+      privateKey: null,
+      publicKey: null,
+      privateJwk: null,
+      publicJwk: null,
+      publicSpkiB64u: '',
+      keyFingerprint: '',
       privateKeyRevealed: false,
-      coverImage: null,       // Loaded HTMLImageElement or HTMLCanvasElement for Art-Card Mosaic
-      activeArtTheme: 'gold', // 'gold' | 'emerald' | 'cobalt' | 'custom'
+      issueCarrierMode: 'qr', // 'qr' | 'mosaic'
+      mosaicTheme: 'emerald', // 'emerald' | 'indigo' | 'gold' | 'slate' | 'custom'
+      mosaicCoverImage: null, // HTMLImageElement or HTMLCanvasElement
       lastGeneratedCarrier: 'qr',
       lastGeneratedPayload: '',
       lastGeneratedInvId: '',
@@ -883,7 +844,7 @@
     };
 
     // =========================================================================
-    // 1. NAVIGATION & TAB MANAGEMENT
+    // 1. TAB NAVIGATION
     // =========================================================================
 
     function switchTab(tabName) {
@@ -905,13 +866,13 @@
         activeBtn.classList.add('border-indigo-600', 'text-indigo-600', 'font-semibold');
       }
 
-      if (tabName === 'vault') {
+      if (tabName === 'keys') {
         renderVaultList();
       }
     }
 
     // =========================================================================
-    // 2. WEB CRYPTO API ENGINE (ECDSA P-256 + CANONICAL SERIALIZATION)
+    // 2. WEB CRYPTO API (ECDSA P-256 + DETERMINISTIC CANONICAL JSON)
     // =========================================================================
 
     function ensureQRCodeLibrary() {
@@ -967,19 +928,19 @@
       return bytes.buffer;
     }
 
-    function canonicalizeJson(value) {
+    function canonicalize(value) {
       if (value === null || typeof value !== 'object') {
         return JSON.stringify(value);
       }
       if (Array.isArray(value)) {
-        return '[' + value.map((item) => canonicalizeJson(item)).join(',') + ']';
+        return '[' + value.map((item) => canonicalize(item)).join(',') + ']';
       }
       const keys = Object.keys(value).sort();
       return (
         '{' +
         keys
           .filter((k) => value[k] !== undefined)
-          .map((k) => JSON.stringify(k) + ':' + canonicalizeJson(value[k]))
+          .map((k) => JSON.stringify(k) + ':' + canonicalize(value[k]))
           .join(',') +
         '}'
       );
@@ -1002,7 +963,7 @@
           }
         }
       } catch (e) {
-        console.warn('Stored keypair invalid, regenerating...', e);
+        console.warn('Stored keypair unreadable, regenerating...', e);
       }
       await generateAndSaveNewKeyPair(true);
     }
@@ -1021,7 +982,7 @@
           showToast('Generated new ECDSA P-256 key pair!', 'success');
         }
       } catch (err) {
-        console.error('Key generation error:', err);
+        console.error('Key generation failed:', err);
         showToast('Failed to generate key pair: ' + err.message, 'error');
       }
     }
@@ -1193,7 +1154,7 @@
           showToast('Imported Public Key (Verifier-Only mode enabled)!', 'success');
         }
       } catch (err) {
-        console.error('Key import failed:', err);
+        console.error('Key import error:', err);
         showToast('Key import failed: ' + err.message, 'error');
       }
     }
@@ -1202,7 +1163,7 @@
       if (!appState.privateKey) {
         throw new Error('Private signing key is not available.');
       }
-      const canonicalPayload = canonicalizeJson(receiptData);
+      const canonicalPayload = canonicalize(receiptData);
       const dataBytes = new TextEncoder().encode(canonicalPayload);
       const signatureBuffer = await crypto.subtle.sign(
         { name: 'ECDSA', hash: { name: 'SHA-256' } },
@@ -1225,7 +1186,7 @@
         return { valid: false, reason: 'Malformed receipt payload structure (missing data or signature).' };
       }
       try {
-        const canonicalPayload = canonicalizeJson(envelope.d);
+        const canonicalPayload = canonicalize(envelope.d);
         const dataBytes = new TextEncoder().encode(canonicalPayload);
         const sigBytes = base64UrlToArrayBuffer(envelope.s);
         const isAuthentic = await crypto.subtle.verify(
@@ -1242,7 +1203,7 @@
         } else {
           return {
             valid: false,
-            reason: 'Cryptographic signature mismatch! Data was modified or signed by a different Private Key.',
+            reason: 'Cryptographic signature mismatch! Receipt data was modified or signed by another key.',
           };
         }
       } catch (err) {
@@ -1254,7 +1215,7 @@
     }
 
     // =========================================================================
-    // 3. ISSUE & SIGN RECEIPT FORM LOGIC
+    // 3. ISSUE & SIGN RECEIPT FORM + PROCEDURAL ARTWORK
     // =========================================================================
 
     function generateRandomInvoiceId() {
@@ -1334,48 +1295,53 @@
       const container = document.getElementById('line-items-container');
       container.innerHTML = '';
       addLineItem('Hardware Security Key', 1, 49.00);
-      addLineItem('USB-C Braided Cable', 2, 12.50);
-      document.getElementById('qr-empty-state').classList.remove('hidden');
-      document.getElementById('qr-result-container').classList.add('hidden');
-      document.getElementById('qr-byte-badge').classList.add('hidden');
+      addLineItem('USB-C Cable', 2, 12.50);
+      document.getElementById('seal-empty-state').classList.remove('hidden');
+      document.getElementById('seal-result-container').classList.add('hidden');
+      document.getElementById('seal-byte-badge').classList.add('hidden');
     }
 
-    /**
-     * Switches between Standard QR generation and Art-Card Mosaic Steganography embedding
-     */
     function setIssueCarrierMode(mode) {
       appState.issueCarrierMode = mode;
       const qrBtn = document.getElementById('carrier-btn-qr');
-      const stegoBtn = document.getElementById('carrier-btn-stego');
-      const coverPicker = document.getElementById('stego-cover-picker');
-      const signBtnSpan = document.querySelector('#btn-sign-generate span');
+      const mosaicBtn = document.getElementById('carrier-btn-mosaic');
+      const configPanel = document.getElementById('mosaic-config-panel');
+      const btnText = document.getElementById('btn-sign-generate-text');
       const emptyTitle = document.getElementById('empty-state-title');
       const emptyDesc = document.getElementById('empty-state-desc');
 
-      if (mode === 'stego') {
-        stegoBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
-        qrBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-        coverPicker.classList.remove('hidden');
-        signBtnSpan.textContent = 'Sign & Generate Mosaic Art Card';
+      if (mode === 'mosaic') {
+        mosaicBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
+        qrBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+        configPanel.classList.remove('hidden');
+        btnText.textContent = 'Sign & Generate Mosaic Art Card';
         emptyTitle.textContent = 'No Mosaic Art Card Generated Yet';
-        emptyDesc.textContent = 'Choose a security card theme or upload a custom photo above, then click "Sign & Generate Mosaic Art Card".';
-        if (!appState.coverImage) {
-          generateThemedCoverArtwork('gold', true);
+        emptyDesc.textContent = 'Select an art theme or upload a custom photo above, then click "Sign & Generate Mosaic Art Card".';
+        if (!appState.mosaicCoverImage) {
+          generateProceduralArtTheme('emerald', true);
         }
       } else {
-        qrBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
-        stegoBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-        coverPicker.classList.add('hidden');
-        signBtnSpan.textContent = 'Sign & Generate Receipt QR Code';
+        qrBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
+        mosaicBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+        configPanel.classList.add('hidden');
+        btnText.textContent = 'Sign & Generate Receipt QR Code';
         emptyTitle.textContent = 'No Seal Generated Yet';
         emptyDesc.textContent = 'Fill out the invoice details on the left and click "Sign & Generate Receipt QR Code".';
       }
     }
 
-    /**
-     * Loads a user-selected custom photo for the Art-Card Mosaic carrier
-     */
-    function handleCoverImageSelect(event) {
+    function selectMosaicTheme(themeKey) {
+      generateProceduralArtTheme(themeKey, false);
+      document.querySelectorAll('.theme-preset-btn').forEach((btn) => {
+        btn.classList.remove('border-2', 'border-indigo-500');
+      });
+      const activeBtn = document.getElementById('theme-btn-' + themeKey);
+      if (activeBtn) {
+        activeBtn.classList.add('border-2', 'border-indigo-500');
+      }
+    }
+
+    function handleMosaicCoverUpload(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
 
@@ -1383,23 +1349,20 @@
       reader.onload = function (e) {
         const img = new Image();
         img.onload = function () {
-          appState.coverImage = img;
-          appState.activeArtTheme = 'custom';
-          document.getElementById('stego-cover-filename').textContent = file.name;
-          document.getElementById('stego-cover-dims').textContent = `${img.width}×${img.height}px • Blended into 1232×924 Mosaic Card`;
-          showToast('Custom background photo loaded into Art-Card Mosaic!', 'success');
+          appState.mosaicCoverImage = img;
+          appState.mosaicTheme = 'custom';
+          document.getElementById('mosaic-cover-filename').textContent = file.name;
+          document.getElementById('mosaic-cover-dims').textContent = `${img.width}×${img.height}px • Blended into 1232×924 RSB2 Mosaic Card`;
+          showToast('Custom photo loaded into Mosaic Art Card!', 'success');
         };
-        img.onerror = () => showToast('Failed to load cover image.', 'error');
+        img.onerror = () => showToast('Failed to load image file.', 'error');
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    /**
-     * Generates a 1232x924 executive security guilloche artwork card ('gold', 'emerald', or 'cobalt')
-     */
-    function generateThemedCoverArtwork(theme = 'gold', silent = false) {
-      appState.activeArtTheme = theme;
+    function generateProceduralArtTheme(theme = 'emerald', silent = false) {
+      appState.mosaicTheme = theme;
       const W = 1232;
       const H = 924;
       const canvas = document.createElement('canvas');
@@ -1407,82 +1370,93 @@
       canvas.height = H;
       const ctx = canvas.getContext('2d');
 
-      const palettes = {
-        gold: {
-          bg1: '#0f172a',
-          bg2: '#1e1b4b',
-          bg3: '#292118',
-          accent: '#fbbf24',
-          accentSoft: 'rgba(251, 191, 36, 0.16)',
-          title: '#fef3c7',
-          sub: '#fcd34d',
-          label: 'LUXURY GOLD CERTIFICATE',
-        },
+      const themes = {
         emerald: {
-          bg1: '#022c22',
-          bg2: '#064e3b',
-          bg3: '#0f172a',
-          accent: '#34d399',
-          accentSoft: 'rgba(52, 211, 153, 0.16)',
-          title: '#ecfdf5',
-          sub: '#6ee7b7',
-          label: 'EMERALD BOTANICAL SEAL',
+          bg1: '#022c22', bg2: '#064e3b', bg3: '#0f172a',
+          accent: '#34d399', soft: 'rgba(52, 211, 153, 0.18)',
+          title: '#ecfdf5', sub: '#6ee7b7', label: 'GUILLOCHÉ EMERALD VAULT',
         },
-        cobalt: {
-          bg1: '#090d16',
-          bg2: '#172554',
-          bg3: '#1e1b4b',
-          accent: '#38bdf8',
-          accentSoft: 'rgba(56, 189, 248, 0.16)',
-          title: '#f0f9ff',
-          sub: '#7dd3fc',
-          label: 'COBALT GEOMETRIC VOUCHER',
+        indigo: {
+          bg1: '#090d16', bg2: '#1e1b4b', bg3: '#172554',
+          accent: '#38bdf8', soft: 'rgba(56, 189, 248, 0.18)',
+          title: '#f0f9ff', sub: '#7dd3fc', label: 'HOLOGRAPHIC INDIGO WAVE',
+        },
+        gold: {
+          bg1: '#1c1917', bg2: '#292524', bg3: '#0f172a',
+          accent: '#fbbf24', soft: 'rgba(251, 191, 36, 0.18)',
+          title: '#fef3c7', sub: '#fcd34d', label: 'GOLD BULLION LATTICE',
+        },
+        slate: {
+          bg1: '#0f172a', bg2: '#1e293b', bg3: '#334155',
+          accent: '#e2e8f0', soft: 'rgba(226, 232, 240, 0.15)',
+          title: '#f8fafc', sub: '#cbd5e1', label: 'MINIMALIST SLATE CARD',
         },
       };
 
-      const p = palettes[theme] || palettes.gold;
-
-      // Rich radial/linear gradient backdrop
+      const t = themes[theme] || themes.emerald;
       const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, p.bg1);
-      grad.addColorStop(0.5, p.bg2);
-      grad.addColorStop(1, p.bg3);
+      grad.addColorStop(0, t.bg1);
+      grad.addColorStop(0.5, t.bg2);
+      grad.addColorStop(1, t.bg3);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
-      // Decorative Guilloche Spirograph Rosette in the center-right
+      // Theme-specific procedural geometric security pattern
       ctx.save();
-      ctx.translate(W * 0.5, H * 0.5);
-      ctx.strokeStyle = p.accentSoft;
-      ctx.lineWidth = 2;
-      for (let k = 0; k < 24; k++) {
-        ctx.rotate(Math.PI / 12);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 390, 150, 0, 0, Math.PI * 2);
-        ctx.stroke();
+      if (theme === 'emerald' || theme === 'gold') {
+        ctx.translate(W / 2, H / 2);
+        ctx.strokeStyle = t.soft;
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 24; i++) {
+          ctx.rotate(Math.PI / 12);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 410, 145, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else if (theme === 'indigo') {
+        ctx.strokeStyle = t.soft;
+        ctx.lineWidth = 2.5;
+        for (let w = 0; w < 14; w++) {
+          ctx.beginPath();
+          for (let x = 0; x <= W; x += 24) {
+            const y = H * 0.5 + Math.sin(x * 0.008 + w * 0.45) * 160 + (w - 7) * 26;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+      } else {
+        ctx.strokeStyle = t.soft;
+        ctx.lineWidth = 1.5;
+        for (let x = 110; x < W - 110; x += 66) {
+          ctx.beginPath();
+          ctx.moveTo(x, 110);
+          ctx.lineTo(x, H - 110);
+          ctx.stroke();
+        }
       }
       ctx.restore();
 
       // Inner ornamental frame
-      ctx.strokeStyle = p.accentSoft;
+      ctx.strokeStyle = t.soft;
       ctx.lineWidth = 3;
-      ctx.strokeRect(115, 115, W - 230, H - 230);
+      ctx.strokeRect(110, 110, W - 220, H - 220);
 
-      // Certificate Typography
+      // Certificate text overlay
       const merchant = document.getElementById('issue-merchant')?.value.trim() || 'ACME DIGITAL STORE';
       const invId = document.getElementById('issue-inv-id')?.value.trim() || 'OFFICIAL RECEIPT';
       const dt = document.getElementById('issue-date')?.value.trim() || '';
 
       ctx.textAlign = 'center';
-      ctx.fillStyle = p.sub;
+      ctx.fillStyle = t.sub;
       ctx.font = '700 22px Inter, sans-serif';
-      ctx.fillText(p.label, W / 2, 320);
+      ctx.fillText(t.label, W / 2, 325);
 
-      ctx.fillStyle = p.title;
-      ctx.font = '800 54px Inter, sans-serif';
+      ctx.fillStyle = t.title;
+      ctx.font = '800 52px Inter, sans-serif';
       ctx.fillText(merchant.slice(0, 26), W / 2, 415);
 
-      ctx.fillStyle = p.accent;
+      ctx.fillStyle = t.accent;
       ctx.font = '600 32px JetBrains Mono, monospace';
       ctx.fillText(invId, W / 2, 485);
 
@@ -1492,26 +1466,44 @@
         ctx.fillText('Issued: ' + dt, W / 2, 540);
       }
 
-      ctx.fillStyle = p.sub;
-      ctx.font = '600 20px Inter, sans-serif';
-      ctx.fillText('ECDSA P-256 CRYPTOGRAPHICALLY AUTHENTICATED', W / 2, 625);
+      ctx.fillStyle = t.sub;
+      ctx.font = '600 19px Inter, sans-serif';
+      ctx.fillText('ECDSA P-256 AUTHENTICATED • ZERO EXPIRATION', W / 2, 625);
 
-      appState.coverImage = canvas;
-      document.getElementById('stego-cover-filename').textContent = p.label + ' (1232×924)';
-      document.getElementById('stego-cover-dims').textContent = '1,064 Differential Mosaic Tile Pairs • Compression & Screenshot Proof';
+      appState.mosaicCoverImage = canvas;
+      document.getElementById('mosaic-cover-filename').textContent = `Theme: ${t.label} (1232×924)`;
+      document.getElementById('mosaic-cover-dims').textContent = '1,064 Differential Mosaic Tile Pairs • Compression & Screenshot Proof';
       if (!silent) {
-        showToast(`Applied ${p.label} artwork theme.`, 'info');
+        showToast(`Applied ${t.label} theme.`, 'info');
       }
     }
 
+    // =========================================================================
+    // 4. RSB2 BINARY PACKET & DIFFERENTIAL MOSAIC ART-CARD ENGINE
+    // =========================================================================
+
+    function computeCRC16(bytes) {
+      let crc = 0xffff;
+      for (let i = 0; i < bytes.length; i++) {
+        crc ^= bytes[i] << 8;
+        for (let j = 0; j < 8; j++) {
+          if (crc & 0x8000) {
+            crc = ((crc << 1) ^ 0x1021) & 0xffff;
+          } else {
+            crc = (crc << 1) & 0xffff;
+          }
+        }
+      }
+      return crc & 0xffff;
+    }
+
     /**
-     * Packs a signed receipt envelope into the ultra-compact RSB2 binary wire format:
-     *   [0..1]   Magic "RS" (0x52, 0x53)
-     *   [2]      Version 0x02
-     *   [3..4]   Compact JSON data length (uint16 big-endian)
-     *   [5..5+N] UTF-8 bytes of compact receipt data object (envelope.d)
-     *   [5+N..69+N] Raw 64-byte IEEE P1363 ECDSA P-256 signature (decoded from envelope.s)
-     *   [69+N..71+N] CRC-16/CCITT-FALSE checksum over bytes [0..69+N)
+     * Packs signed envelope into compact RSB2 binary packet:
+     *   [0..3]       ASCII "RSB2" (0x52, 0x53, 0x42, 0x32)
+     *   [4..5]       uint16 big-endian dataJson length N
+     *   [6..6+N)     UTF-8 bytes of compact receipt data object (envelope.d)
+     *   [6+N..70+N)  Raw 64-byte IEEE P1363 ECDSA P-256 signature
+     *   [70+N..72+N) CRC-16/CCITT-FALSE checksum over [0..70+N)
      */
     function packSignedEnvelopeToRSB2(signedEnvelope) {
       const compactDataJson = JSON.stringify(signedEnvelope.d);
@@ -1521,15 +1513,16 @@
         throw new Error(`Expected 64-byte ECDSA P-256 signature, got ${sigBytes.length} bytes.`);
       }
 
-      const bodyLen = 5 + dataBytes.length + 64;
+      const bodyLen = 6 + dataBytes.length + 64;
       const packet = new Uint8Array(bodyLen + 2);
       packet[0] = 0x52; // 'R'
       packet[1] = 0x53; // 'S'
-      packet[2] = 0x02; // Version 2 (RSB2)
-      packet[3] = (dataBytes.length >>> 8) & 0xff;
-      packet[4] = dataBytes.length & 0xff;
-      packet.set(dataBytes, 5);
-      packet.set(sigBytes, 5 + dataBytes.length);
+      packet[2] = 0x42; // 'B'
+      packet[3] = 0x32; // '2'
+      packet[4] = (dataBytes.length >>> 8) & 0xff;
+      packet[5] = dataBytes.length & 0xff;
+      packet.set(dataBytes, 6);
+      packet.set(sigBytes, 6 + dataBytes.length);
 
       const crc = computeCRC16(packet.subarray(0, bodyLen));
       packet[bodyLen] = (crc >>> 8) & 0xff;
@@ -1537,17 +1530,19 @@
       return packet;
     }
 
-    /**
-     * Unpacks an RSB2 binary packet back into the canonical JSON string { v: 1, d: ..., s: ... }
-     * Returns null if header or CRC-16 fails validation.
-     */
     function unpackRSB2ToCanonicalJson(packetBytes) {
-      if (!packetBytes || packetBytes.length < 72) return null;
-      if (packetBytes[0] !== 0x52 || packetBytes[1] !== 0x53 || packetBytes[2] !== 0x02) {
+      if (!packetBytes || packetBytes.length < 74) return null;
+      if (
+        packetBytes[0] !== 0x52 ||
+        packetBytes[1] !== 0x53 ||
+        packetBytes[2] !== 0x42 ||
+        packetBytes[3] !== 0x32
+      ) {
         return null;
       }
-      const dataLen = (packetBytes[3] << 8) | packetBytes[4];
-      const bodyLen = 5 + dataLen + 64;
+
+      const dataLen = (packetBytes[4] << 8) | packetBytes[5];
+      const bodyLen = 6 + dataLen + 64;
       if (dataLen <= 2 || bodyLen + 2 > packetBytes.length) return null;
 
       const expectedCrc = (packetBytes[bodyLen] << 8) | packetBytes[bodyLen + 1];
@@ -1555,8 +1550,8 @@
       if (actualCrc !== expectedCrc) return null;
 
       try {
-        const dataSlice = packetBytes.subarray(5, 5 + dataLen);
-        const sigSlice = packetBytes.slice(5 + dataLen, 5 + dataLen + 64);
+        const dataSlice = packetBytes.subarray(6, 6 + dataLen);
+        const sigSlice = packetBytes.slice(6 + dataLen, 6 + dataLen + 64);
         const dataJsonStr = new TextDecoder('utf-8', { fatal: true }).decode(dataSlice);
         const dataObj = JSON.parse(dataJsonStr);
         const sigB64u = arrayBufferToBase64Url(sigSlice.buffer);
@@ -1567,18 +1562,17 @@
     }
 
     /**
-     * Returns the deterministic layout of the 56 x 42 Mosaic Art Card (1232 x 924 px, 22x22 px tiles):
-     * - 4 Corner Finder Targets (each 4x4 tiles = 88x88 px at corners: TL, TR, BR, BL)
-     * - Perimeter Calibration Ring on row 0, row 41, col 0, col 55 between corners
-     * - 1,064 Differential Adjacent Tile Pairs (horizontal pairs (c, c+1) on non-reserved cells)
+     * Deterministic 56 x 42 macro-tile layout (1232 x 924 px, 22x22 px tiles):
+     * - Four 4x4-tile (88x88 px) corner finder targets at (0,0), (52,0), (52,38), (0,38)
+     * - Perimeter calibration border on outer edges between corner targets
+     * - 1,064 horizontal adjacent tile pairs [(row, colA, colB)]
      */
     function getMosaicGridLayout() {
       const cols = 56;
       const rows = 42;
-      const tileSize = 22; // 56*22 = 1232, 42*22 = 924 (exact 4:3)
-      const reserved = new Uint8Array(rows * cols); // 0 = data, 1 = finder, 2 = calibration
+      const tileSize = 22;
+      const reserved = new Uint8Array(rows * cols);
 
-      // Mark 4x4 corner finder regions
       const markRect = (r0, c0, h, w, val) => {
         for (let r = r0; r < r0 + h; r++) {
           for (let c = c0; c < c0 + w; c++) {
@@ -1586,12 +1580,11 @@
           }
         }
       };
-      markRect(0, 0, 4, 4, 1);                 // Top-Left Finder
-      markRect(0, cols - 4, 4, 4, 1);          // Top-Right Finder
-      markRect(rows - 4, cols - 4, 4, 4, 1);   // Bottom-Right Finder
-      markRect(rows - 4, 0, 4, 4, 1);          // Bottom-Left Finder
+      markRect(0, 0, 4, 4, 1);               // Top-Left Finder
+      markRect(0, cols - 4, 4, 4, 1);        // Top-Right Finder
+      markRect(rows - 4, cols - 4, 4, 4, 1); // Bottom-Right Finder
+      markRect(rows - 4, 0, 4, 4, 1);        // Bottom-Left Finder
 
-      // Mark outer perimeter timing/calibration strip between corners
       for (let c = 4; c < cols - 4; c++) {
         reserved[0 * cols + c] = 2;
         reserved[(rows - 1) * cols + c] = 2;
@@ -1601,7 +1594,6 @@
         reserved[r * cols + (cols - 1)] = 2;
       }
 
-      // Collect horizontal adjacent tile pairs [(r, cA), (r, cB)]
       const pairs = [];
       for (let r = 1; r < rows - 1; r++) {
         let c = 1;
@@ -1619,16 +1611,13 @@
     }
 
     /**
-     * Renders the 1232x924 Compression-Proof Mosaic Art Card onto targetCanvas:
-     * 1. Draws the user's photo or curated security theme smoothly across the canvas.
-     * 2. Overlays a translucent architectural stained-glass mosaic of 22x22 px tiles where
-     *    each bit is encoded as a Differential Adjacent Tile Pair (Lum(A) vs Lum(B)) that
-     *    preserves the underlying photo's average brightness while guaranteeing |Lum(A)-Lum(B)| >= 56..84.
-     * 3. Draws 4 large 88x88 px (4x4 tile) QR/Aztec-style 1:1:3:1:1 high-contrast corner finder targets
-     *    with an asymmetric Top-Left orientation anchor so rotation & perspective are 100% unambiguous.
-     * 4. Also writes lossless RSL1 LSBs into the non-finder background for instant lossless PNG decoding.
+     * Renders the 1232x924 RSB2 Differential Mosaic Art Card onto targetCanvas:
+     * 1. Draws the procedural art theme or uploaded photo.
+     * 2. Encodes the RSB2 binary packet across 1,064 adjacent 22x22px tile pairs via differential luminance.
+     * 3. Draws four 88x88px (4x4-tile) 1:1:3:1:1 corner finder targets with an asymmetric Top-Left orientation anchor.
+     * 4. Embeds lossless RSL1 LSBs in rows 5..36 for instant lossless PNG extraction.
      */
-    function embedPayloadIntoCanvasLSB(sourceImage, targetCanvas, payloadStr, signedEnvelope = null) {
+    function embedMosaicArtCard(sourceImage, targetCanvas, payloadStr, signedEnvelope) {
       const layout = getMosaicGridLayout();
       const { cols, rows, tileSize, width, height, pairs } = layout;
       targetCanvas.width = width;
@@ -1636,7 +1625,6 @@
 
       const ctx = targetCanvas.getContext('2d', { willReadFrequently: true });
 
-      // Cover-fit sourceImage onto 1232x924 canvas
       const srcW = sourceImage.naturalWidth || sourceImage.width;
       const srcH = sourceImage.naturalHeight || sourceImage.height;
       const scale = Math.max(width / srcW, height / srcH);
@@ -1649,33 +1637,14 @@
       ctx.fillRect(0, 0, width, height);
       ctx.drawImage(sourceImage, offsetX, offsetY, drawW, drawH);
 
-      // Apply user-configured background photo clarity (dimming slightly if needed for high contrast)
-      const clarityPct = parseInt(document.getElementById('stego-photo-clarity')?.value || '85', 10);
-      if (clarityPct < 100) {
-        const dimAlpha = ((100 - clarityPct) / 100) * 0.65;
-        ctx.fillStyle = `rgba(15, 23, 42, ${dimAlpha.toFixed(3)})`;
-        ctx.fillRect(0, 0, width, height);
-      }
+      const rsb2Packet = packSignedEnvelopeToRSB2(signedEnvelope);
+      const maxMosaicBytes = Math.floor(pairs.length / 8); // 133 bytes
+      const mosaicFits = rsb2Packet.length <= maxMosaicBytes;
+      const deltaAmp = parseFloat(document.getElementById('mosaic-strength-select')?.value || '34') || 34;
 
-      // Pack signed envelope into RSB2 binary wire format (~95-120 bytes)
-      let envelopeObj = signedEnvelope;
-      if (!envelopeObj) {
-        try {
-          envelopeObj = JSON.parse(payloadStr);
-        } catch (e) {
-          envelopeObj = null;
-        }
-      }
-
-      const rsb2Packet = envelopeObj ? packSignedEnvelopeToRSB2(envelopeObj) : null;
-      const maxMosaicBytes = Math.floor(pairs.length / 8); // 1,064 / 8 = 133 bytes
-      const mosaicFits = rsb2Packet && rsb2Packet.length <= maxMosaicBytes;
-
-      const deltaAmp = parseFloat(document.getElementById('stego-strength-select')?.value || '34') || 34;
       const imgData = ctx.getImageData(0, 0, width, height);
       const pixels = imgData.data;
 
-      // Helper to compute mean RGB luminance of tile (r, c)
       const getTileMeanRGB = (r, c) => {
         let sr = 0, sg = 0, sb = 0, count = 0;
         const y0 = r * tileSize + 2;
@@ -1694,7 +1663,6 @@
         return [sr / count, sg / count, sb / count];
       };
 
-      // Helper to apply balanced luminance shift to tile (r, c) while keeping subtle stained-glass bevel
       const shiftTileLuminance = (r, c, delta) => {
         const y0 = r * tileSize;
         const x0 = c * tileSize;
@@ -1703,7 +1671,6 @@
           for (let px = x0; px < x0 + tileSize; px++) {
             const isEdgeX = px === x0 || px === x0 + tileSize - 1;
             const idx = (py * width + px) * 4;
-            // Subtle architectural mosaic grout line on outer 1px border of each tile
             const bevel = isEdgeX || isEdgeY ? delta * 0.45 : delta;
             pixels[idx] = Math.max(0, Math.min(255, Math.round(pixels[idx] + bevel)));
             pixels[idx + 1] = Math.max(0, Math.min(255, Math.round(pixels[idx + 1] + bevel)));
@@ -1712,7 +1679,7 @@
         }
       };
 
-      // 1. Encode Perimeter Calibration Strip (alternating 0, 1 tiles)
+      // Perimeter calibration border
       for (let c = 4; c < cols - 4; c++) {
         const bit = c & 1;
         shiftTileLuminance(0, c, bit ? deltaAmp : -deltaAmp);
@@ -1724,7 +1691,7 @@
         shiftTileLuminance(r, cols - 1, bit ? -deltaAmp : deltaAmp);
       }
 
-      // 2. Encode RSB2 Binary Packet into Differential Adjacent Tile Pairs
+      // Differential adjacent tile pair encoding
       if (mosaicFits) {
         const totalBits = rsb2Packet.length * 8;
         for (let bitIdx = 0; bitIdx < pairs.length; bitIdx++) {
@@ -1734,19 +1701,15 @@
             const byteVal = rsb2Packet[bitIdx >>> 3];
             bit = (byteVal >>> (7 - (bitIdx & 7))) & 1;
           } else {
-            // Deterministic pseudo-random decorative mosaic pattern for unused trailing tiles
-            bit = ((r * 7 + cA * 13) & 1);
+            bit = (r * 7 + cA * 13) & 1;
           }
 
-          // Measure natural photo luminance of both tiles so we equalize their baseline first,
-          // ensuring high-contrast edges in the photo never overpower the differential bit!
           const [rA, gA, bA] = getTileMeanRGB(r, cA);
           const [rB, gB, bB] = getTileMeanRGB(r, cB);
           const lumA = 0.299 * rA + 0.587 * gA + 0.114 * bA;
           const lumB = 0.299 * rB + 0.587 * gB + 0.114 * bB;
           const avgLum = (lumA + lumB) * 0.5;
 
-          // Clamp average luminance slightly away from pure 0 or 255 so +/- deltaAmp has full headroom
           const clampedMid = Math.max(deltaAmp + 8, Math.min(247 - deltaAmp, avgLum));
           const targetLumA = clampedMid + (bit ? deltaAmp : -deltaAmp);
           const targetLumB = clampedMid + (bit ? -deltaAmp : deltaAmp);
@@ -1758,9 +1721,8 @@
 
       ctx.putImageData(imgData, 0, 0);
 
-      // 3. Draw 4 Large 4x4-Tile (88x88 px) High-Contrast QR/Aztec Corner Finder Targets
-      // Classic 1 : 1 : 3 : 1 : 1 ratio across 7 modules -> survives extreme downscaling & JPEG compression
-      const finderPx = 4 * tileSize; // 88px
+      // Draw four 88x88 px (4x4 tile) 1:1:3:1:1 high-contrast corner finder targets
+      const finderPx = 4 * tileSize;
       const finderSpecs = [
         { x: 0, y: 0, isTopLeft: true },
         { x: width - finderPx, y: 0, isTopLeft: false },
@@ -1770,7 +1732,6 @@
 
       finderSpecs.forEach(({ x, y, isTopLeft }) => {
         ctx.save();
-        // Outer white quiet margin (1/9th inset)
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(x, y, finderPx, finderPx);
 
@@ -1778,7 +1739,7 @@
         const box = finderPx - pad * 2;
         const unit = box / 7;
 
-        // Outer black ring (7x7 units)
+        // Outer dark ring (7x7 units)
         ctx.fillStyle = '#090d16';
         ctx.fillRect(x + pad, y + pad, box, box);
 
@@ -1790,17 +1751,20 @@
         ctx.fillStyle = '#090d16';
         ctx.fillRect(x + pad + unit * 2, y + pad + unit * 2, unit * 3, unit * 3);
 
-        // Asymmetric orientation notch on Top-Left finder only (bright gold/white inner diamond)
+        // Asymmetric orientation square inside Top-Left target for 0°/90°/180°/270° rotation detection
         if (isTopLeft) {
           ctx.fillStyle = '#fbbf24';
-          ctx.beginPath();
-          ctx.arc(x + finderPx / 2, y + finderPx / 2, unit * 0.72, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.fillRect(
+            x + finderPx / 2 - unit * 0.65,
+            y + finderPx / 2 - unit * 0.65,
+            unit * 1.3,
+            unit * 1.3
+          );
         }
         ctx.restore();
       });
 
-      // 4. Also embed exact RSL1 LSBs in the middle rows (rows 5..36) for 100% lossless PNG fast-path
+      // Embed exact RSL1 LSBs in rows 5..36 for lossless PNG fast-path recovery
       const payloadBytes = new TextEncoder().encode(payloadStr);
       const totalLsbBytes = 8 + payloadBytes.length;
       const totalLsbBits = totalLsbBytes * 8;
@@ -1814,7 +1778,10 @@
         for (let p = 3; p < pData.length; p += 4) pData[p] = 255;
 
         const lsbBuf = new Uint8Array(totalLsbBytes);
-        lsbBuf[0] = 0x52; lsbBuf[1] = 0x53; lsbBuf[2] = 0x4c; lsbBuf[3] = 0x31;
+        lsbBuf[0] = 0x52; // 'R'
+        lsbBuf[1] = 0x53; // 'S'
+        lsbBuf[2] = 0x4c; // 'L'
+        lsbBuf[3] = 0x31; // '1'
         lsbBuf[4] = (payloadBytes.length >>> 24) & 0xff;
         lsbBuf[5] = (payloadBytes.length >>> 16) & 0xff;
         lsbBuf[6] = (payloadBytes.length >>> 8) & 0xff;
@@ -1833,28 +1800,25 @@
         ctx.putImageData(finalImg, 0, 0);
       }
 
-      // Update UI capacity indicator
-      const noteEl = document.getElementById('stego-grid-capacity-note');
+      const noteEl = document.getElementById('mosaic-capacity-note');
       if (noteEl) {
         if (mosaicFits) {
-          noteEl.innerHTML = `<span class="text-emerald-700 font-semibold">✓ RSB2 Mosaic Embedded (${rsb2Packet.length}/${maxMosaicBytes} bytes)</span> — Survives iOS/Android screenshots, WhatsApp/Telegram compression &amp; camera scans.`;
+          noteEl.innerHTML = `<span class="text-emerald-700 font-semibold">✓ RSB2 Mosaic Active (${rsb2Packet.length}/${maxMosaicBytes} bytes)</span> — Survives screenshots, WhatsApp/Telegram compression, rotation &amp; camera scans.`;
         } else {
-          const sz = rsb2Packet ? rsb2Packet.length : 0;
-          noteEl.innerHTML = `<span class="text-amber-700 font-semibold">⚠ Receipt (${sz} bytes) exceeds ${maxMosaicBytes}-byte Mosaic limit</span> — Shorten item names slightly so it fits inside the screenshot/chat-proof mosaic.`;
+          noteEl.innerHTML = `<span class="text-amber-700 font-semibold">⚠ Receipt (${rsb2Packet.length} bytes) exceeds ${maxMosaicBytes}-byte Mosaic limit</span> — Shorten item names slightly so it fits inside the screenshot/chat-proof mosaic.`;
         }
       }
     }
 
     /**
      * Multi-scale 1:1:3:1:1 Finder Pattern Detector for the 4x4-tile (88x88 px) corner targets.
-     * Works across full-res PNGs, WhatsApp/Telegram compressed JPEGs, iOS/Android screenshots
-     * with status bars/bezels, and live camera video frames!
+     * Supports arbitrary image sizes, phone screenshots with borders/bezels, messaging compression,
+     * and 0°/90°/180°/270° rotated art cards (via Top-Left gold orientation square detection).
      */
     function detectMosaicCardCorners(imgData) {
       const { width, height, data } = imgData;
       if (width < 160 || height < 120) return [];
 
-      // Work on a normalized grayscale buffer (max 800px wide for speed & noise smoothing)
       const scale = Math.min(1, 800 / Math.max(width, height));
       const sw = Math.max(120, Math.round(width * scale));
       const sh = Math.max(90, Math.round(height * scale));
@@ -1869,24 +1833,21 @@
         }
       }
 
-      // Helper to verify a 1:1:3:1:1 finder cross-section along a vertical column at x around center y
       const verifyVerticalRatio = (cx, cy, unitEst) => {
         const halfSpan = Math.round(unitEst * 4.2);
         const yTop = Math.max(0, cy - halfSpan);
         const yBot = Math.min(sh - 1, cy + halfSpan);
         if (yBot - yTop < 10) return false;
 
-        // Local adaptive threshold from min & max along vertical slice
         let minV = 255, maxV = 0;
         for (let y = yTop; y <= yBot; y++) {
           const v = lum[y * sw + cx];
           if (v < minV) minV = v;
           if (v > maxV) maxV = v;
         }
-        if (maxV - minV < 55) return false;
+        if (maxV - minV < 50) return false;
         const thresh = (minV + maxV) * 0.5;
 
-        // Run-length encode dark/light segments passing through cy
         const runs = [];
         let curDark = lum[yTop * sw + cx] < thresh;
         let runLen = 0;
@@ -1917,7 +1878,7 @@
         if (!r0.dark || r1.dark || !r2.dark || r3.dark || !r4.dark) return false;
         const u = (r0.len + r1.len + r2.len + r3.len + r4.len) / 7;
         if (u < 1.2) return false;
-        const tol = u * 0.65;
+        const tol = u * 0.68;
         return (
           Math.abs(r0.len - u) < tol &&
           Math.abs(r1.len - u) < tol &&
@@ -1928,7 +1889,6 @@
       };
 
       const rawCenters = [];
-      // Scan horizontal lines every 2px for 1:1:3:1:1 dark-light-dark-light-dark run ratios
       for (let y = 4; y < sh - 4; y += 2) {
         let minRow = 255, maxRow = 0;
         const rowOff = y * sw;
@@ -1937,9 +1897,8 @@
           if (v < minRow) minRow = v;
           if (v > maxRow) maxRow = v;
         }
-        if (maxRow - minRow < 50) continue;
+        if (maxRow - minRow < 48) continue;
 
-        // Sliding window adaptive threshold per 64px segment to handle uneven lighting/shadows
         const stateCount = [0, 0, 0, 0, 0];
         let curState = 0;
 
@@ -1947,7 +1906,7 @@
           const total = stateCount[0] + stateCount[1] + stateCount[2] + stateCount[3] + stateCount[4];
           if (total < 7) return 0;
           const u = total / 7;
-          const maxVar = u * 0.62;
+          const maxVar = u * 0.65;
           if (
             Math.abs(stateCount[0] - u) < maxVar &&
             Math.abs(stateCount[1] - u) < maxVar &&
@@ -1961,7 +1920,6 @@
         };
 
         for (let x = 2; x < sw - 2; x++) {
-          // Local min/max in +/- 24px window around x
           let lMin = 255, lMax = 0;
           const w0 = Math.max(0, x - 24);
           const w1 = Math.min(sw - 1, x + 24);
@@ -2007,7 +1965,6 @@
 
       if (rawCenters.length < 4) return [];
 
-      // Cluster nearby scanline hits into precise finder centroids
       const clusters = [];
       const clusterRadius = Math.max(18, Math.min(width, height) * 0.035);
       for (const hit of rawCenters) {
@@ -2036,11 +1993,19 @@
         }
       }
 
+      // Compute center brightness / gold orientation score for each cluster
+      clusters.forEach((cl) => {
+        const ix = Math.max(0, Math.min(width - 1, Math.round(cl.x)));
+        const iy = Math.max(0, Math.min(height - 1, Math.round(cl.y)));
+        const idx = (iy * width + ix) * 4;
+        const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+        cl.anchorBrightness = (r + g) * 0.5 - b * 0.35;
+      });
+
       clusters.sort((a, b) => b.score - a.score);
       const topClusters = clusters.slice(0, 12);
       if (topClusters.length < 4) return [];
 
-      // Form candidate quadrilaterals (TL, TR, BR, BL) and check Top-Left gold orientation marker
       const quads = [];
       for (let i = 0; i < topClusters.length; i++) {
         for (let j = i + 1; j < topClusters.length; j++) {
@@ -2050,35 +2015,58 @@
               const cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x) * 0.25;
               const cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y) * 0.25;
 
-              let tl = null, tr = null, br = null, bl = null;
+              let c0 = null, c1 = null, c2 = null, c3 = null;
               for (const p of pts) {
-                if (p.x < cx && p.y < cy) tl = p;
-                else if (p.x >= cx && p.y < cy) tr = p;
-                else if (p.x >= cx && p.y >= cy) br = p;
-                else if (p.x < cx && p.y >= cy) bl = p;
+                if (p.x < cx && p.y < cy) c0 = p;       // Top-Left in image
+                else if (p.x >= cx && p.y < cy) c1 = p; // Top-Right in image
+                else if (p.x >= cx && p.y >= cy) c2 = p;// Bottom-Right in image
+                else if (p.x < cx && p.y >= cy) c3 = p; // Bottom-Left in image
               }
-              if (!tl || !tr || !br || !bl) continue;
+              if (!c0 || !c1 || !c2 || !c3) continue;
 
-              const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
-              const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
-              const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
-              const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
+              const topW = Math.hypot(c1.x - c0.x, c1.y - c0.y);
+              const botW = Math.hypot(c2.x - c3.x, c2.y - c3.y);
+              const leftH = Math.hypot(c3.x - c0.x, c3.y - c0.y);
+              const rightH = Math.hypot(c2.x - c1.x, c2.y - c1.y);
 
-              if (topW < 100 || leftH < 70) continue;
+              if (topW < 80 || leftH < 80) continue;
               const wRatio = Math.min(topW, botW) / Math.max(topW, botW);
               const hRatio = Math.min(leftH, rightH) / Math.max(leftH, rightH);
               if (wRatio < 0.72 || hRatio < 0.72) continue;
 
-              const aspect = ((topW + botW) * 0.5) / ((leftH + rightH) * 0.5);
+              const avgW = (topW + botW) * 0.5;
+              const avgH = (leftH + rightH) * 0.5;
+              const aspect = Math.max(avgW, avgH) / Math.min(avgW, avgH);
               if (aspect < 1.05 || aspect > 2.05) continue;
 
-              const aspectPenalty = Math.abs(aspect - 1.35) * 200;
+              // Order clockwise starting from the corner with the gold Top-Left anchor
+              const ring = [c0, c1, c2, c3];
+              let bestAnchorIdx = 0;
+              for (let idx = 1; idx < 4; idx++) {
+                if (ring[idx].anchorBrightness > ring[bestAnchorIdx].anchorBrightness) {
+                  bestAnchorIdx = idx;
+                }
+              }
+
+              const baseScore = c0.score + c1.score + c2.score + c3.score - Math.abs(aspect - 1.35) * 200;
+
+              // Primary orientation (starting at detected gold Top-Left corner)
               quads.push({
-                tl,
-                tr,
-                br,
-                bl,
-                score: tl.score + tr.score + br.score + bl.score - aspectPenalty,
+                tl: ring[bestAnchorIdx],
+                tr: ring[(bestAnchorIdx + 1) % 4],
+                br: ring[(bestAnchorIdx + 2) % 4],
+                bl: ring[(bestAnchorIdx + 3) % 4],
+                score: baseScore + 50,
+              });
+
+              // Also push 180-degree opposite in case lighting washed out the gold square
+              const oppIdx = (bestAnchorIdx + 2) % 4;
+              quads.push({
+                tl: ring[oppIdx],
+                tr: ring[(oppIdx + 1) % 4],
+                br: ring[(oppIdx + 2) % 4],
+                bl: ring[(oppIdx + 3) % 4],
+                score: baseScore,
               });
             }
           }
@@ -2086,19 +2074,18 @@
       }
 
       quads.sort((a, b) => b.score - a.score);
-      return quads.slice(0, 6);
+      return quads.slice(0, 8);
     }
 
     /**
-     * Decodes the Compression-Proof RSB2 Differential Mosaic Art Card from any ImageData
-     * (screenshots with borders, WhatsApp/Telegram compressed JPEGs, or live camera frames).
+     * Decodes the Compression- & Screenshot-Proof RSB2 Differential Mosaic Art Card
+     * from any ImageData (screenshots, WhatsApp/Telegram JPEGs, rotated photos, or camera frames).
      */
-    function extractCameraStealthGridFromImageData(imgData, returnMeta = false) {
+    function extractMosaicCardFromImageData(imgData, returnMeta = false) {
       const { width, height, data } = imgData;
       const layout = getMosaicGridLayout();
       const { cols, rows, pairs } = layout;
 
-      // Bilinear luminance sampler
       const sampleLum = (px, py) => {
         const x = Math.max(0, Math.min(width - 1.001, px));
         const y = Math.max(0, Math.min(height - 1.001, py));
@@ -2120,8 +2107,6 @@
         );
       };
 
-      // Note: The 4 corner finder targets are 4x4 tiles centered at tile (2, 2), (2, cols-2),
-      // (rows-2, cols-2), and (rows-2, 2) in tile coordinates!
       const decodeQuad = (quad) => {
         const tileToXY = (tc, tr) => {
           const qu = (tc - 2) / (cols - 4);
@@ -2133,7 +2118,6 @@
           return [topX + (botX - topX) * qv, topY + (botY - topY) * qv];
         };
 
-        // Sample interior 3x3 sub-points of tile (r, c) (completely avoiding JPEG block/tile edges)
         const sampleTileInterior = (r, c) => {
           let sum = 0;
           const offsets = [0.32, 0.5, 0.68];
@@ -2165,13 +2149,19 @@
           return out;
         };
 
-        // Read 5-byte RSB2 header first ("RS" + 0x02 + uint16 dataLen)
-        const header = readBytes(0, 5);
-        if (!header || header[0] !== 0x52 || header[1] !== 0x53 || header[2] !== 0x02) {
+        // Read 6-byte RSB2 header ("RSB2" + uint16 dataLen)
+        const header = readBytes(0, 6);
+        if (
+          !header ||
+          header[0] !== 0x52 ||
+          header[1] !== 0x53 ||
+          header[2] !== 0x42 ||
+          header[3] !== 0x32
+        ) {
           return null;
         }
-        const dataLen = (header[3] << 8) | header[4];
-        const totalPacketLen = 5 + dataLen + 64 + 2;
+        const dataLen = (header[4] << 8) | header[5];
+        const totalPacketLen = 6 + dataLen + 64 + 2;
         if (dataLen <= 2 || totalPacketLen * 8 > pairs.length) {
           return null;
         }
@@ -2182,7 +2172,7 @@
         return unpackRSB2ToCanonicalJson(fullPacket);
       };
 
-      // 1. Primary path: Locate 4 corner finder targets anywhere in screenshot or camera frame
+      // 1. Primary path: Locate 4 corner finder targets anywhere in screenshot, chat photo, or camera frame
       const quads = detectMosaicCardCorners(imgData);
       for (const quad of quads) {
         const canonicalJson = decodeQuad(quad);
@@ -2208,13 +2198,12 @@
 
     /**
      * Extracts hidden UTF-8 payload from RGB Least Significant Bits if "RSL1" header is present
-     * (checks both pixel 0 start for legacy files and row 5 start for Art-Card Mosaic PNGs)
      */
     function extractPayloadFromImageDataLSB(imgData) {
       const { width, height, data: pixels } = imgData;
 
       const tryReadAtPixelOffset = (startPixel) => {
-        const maxBytes = Math.floor((((width * height - startPixel) * 3)) / 8);
+        const maxBytes = Math.floor(((width * height - startPixel) * 3) / 8);
         if (maxBytes < 12) return null;
 
         const readBytes = (startByte, count) => {
@@ -2253,700 +2242,13 @@
         }
       };
 
-      // Check row 5 offset (1232x924 Art-Card Mosaic lossless PNG) first, then pixel 0
       return tryReadAtPixelOffset(5 * 22 * width) || tryReadAtPixelOffset(0);
     }
-      } else {
-        qrBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
-        stegoBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-        coverPicker.classList.add('hidden');
-        signBtnSpan.textContent = 'Sign & Generate Receipt QR Code';
-        emptyTitle.textContent = 'No QR Code Generated Yet';
-        emptyDesc.textContent = 'Fill out the invoice details on the left and click "Sign & Generate Receipt QR Code".';
-      }
-    }
 
-    /**
-     * Loads a user-selected cover image for LSB steganography
-     */
-    function handleCoverImageSelect(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
+    // =========================================================================
+    // 5. ISSUE GENERATION & CROSS-PLATFORM PNG DOWNLOAD / iOS SAVE
+    // =========================================================================
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const img = new Image();
-        img.onload = function () {
-          appState.coverImage = img;
-          const maxBytes = Math.floor((img.width * img.height * 3) / 8) - 8;
-          document.getElementById('stego-cover-filename').textContent = file.name;
-          document.getElementById('stego-cover-dims').textContent = `${img.width}×${img.height}px • Capacity: ${(maxBytes / 1024).toFixed(1)} KB`;
-          showToast('Cover image loaded for stealth embedding!', 'success');
-        };
-        img.onerror = () => showToast('Failed to load cover image.', 'error');
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    /**
-     * Generates a clean, crisp receipt-card cover graphic if the user doesn't pick a photo
-     */
-    function generateSampleCoverImage(silent = false) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 640;
-      canvas.height = 420;
-      const ctx = canvas.getContext('2d');
-
-      // Rich gradient backdrop
-      const grad = ctx.createLinearGradient(0, 0, 640, 420);
-      grad.addColorStop(0, '#1e1b4b');
-      grad.addColorStop(0.5, '#312e81');
-      grad.addColorStop(1, '#0f172a');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 640, 420);
-
-      // Decorative subtle geometric rings
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.lineWidth = 2;
-      for (let r = 60; r <= 260; r += 50) {
-        ctx.beginPath();
-        ctx.arc(520, 90, r, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // Inner frosted card
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
-      ctx.beginPath();
-      ctx.roundRect(40, 40, 560, 340, 24);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.stroke();
-
-      // Text labels on cover image
-      const merchant = document.getElementById('issue-merchant')?.value.trim() || 'ACME DIGITAL STORE';
-      const invId = document.getElementById('issue-inv-id')?.value.trim() || 'OFFICIAL RECEIPT';
-      ctx.fillStyle = '#a5b4fc';
-      ctx.font = '600 13px Inter, sans-serif';
-      ctx.fillText('VERIFIED DIGITAL VOUCHER', 72, 95);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 28px Inter, sans-serif';
-      ctx.fillText(merchant.slice(0, 28), 72, 138);
-
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = '500 16px monospace';
-      ctx.fillText(invId, 72, 174);
-
-      ctx.fillStyle = '#34d399';
-      ctx.font = '600 13px Inter, sans-serif';
-      ctx.fillText('● Protected by ReceiptSeal Cryptographic Seal', 72, 336);
-
-      appState.coverImage = canvas;
-      const maxBytes = Math.floor((canvas.width * canvas.height * 3) / 8) - 8;
-      document.getElementById('stego-cover-filename').textContent = 'Sample_Voucher_Cover.png';
-      document.getElementById('stego-cover-dims').textContent = `${canvas.width}×${canvas.height}px • Capacity: ${(maxBytes / 1024).toFixed(1)} KB`;
-      if (!silent) {
-        showToast('Generated sample cover artwork.', 'info');
-      }
-    }
-
-    /**
-     * Embeds a UTF-8 string invisibly into the RGB Least Significant Bits (1 bit per channel)
-     * AND optionally embeds a Screenshot/Camera-Scannable Stealth Luminance Micro-Grid + 4 Corner Bullseyes.
-     * LSB Header format: 4-byte magic "RSL1" + 4-byte big-endian payload byte length + UTF-8 payload bytes
-     */
-    function embedPayloadIntoCanvasLSB(sourceImage, targetCanvas, payloadStr) {
-      const cameraBoost = document.getElementById('stego-camera-boost')?.checked ?? true;
-      // Standardize canvas aspect ratio to 3:2 (720x480) when camera/screenshot boost is active
-      // so perspective warping can reliably rectify the 4 corner registration targets
-      const width = cameraBoost ? 720 : (sourceImage.naturalWidth || sourceImage.width);
-      const height = cameraBoost ? 480 : (sourceImage.naturalHeight || sourceImage.height);
-      targetCanvas.width = width;
-      targetCanvas.height = height;
-
-      const ctx = targetCanvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(sourceImage, 0, 0, width, height);
-
-      const payloadBytes = new TextEncoder().encode(payloadStr);
-      const totalBytes = 8 + payloadBytes.length;
-      const totalBits = totalBytes * 8;
-      const availableBits = width * height * 3; // R, G, B channels
-
-      if (totalBits > availableBits) {
-        throw new Error(`Cover image is too small (${width}×${height}px). Needs at least ${Math.ceil(totalBits / 3)} pixels.`);
-      }
-
-      // Assemble LSB header + payload buffer ("RSL1")
-      const fullBuffer = new Uint8Array(totalBytes);
-      fullBuffer[0] = 0x52; // 'R'
-      fullBuffer[1] = 0x53; // 'S'
-      fullBuffer[2] = 0x4c; // 'L'
-      fullBuffer[3] = 0x31; // '1'
-      fullBuffer[4] = (payloadBytes.length >>> 24) & 0xff;
-      fullBuffer[5] = (payloadBytes.length >>> 16) & 0xff;
-      fullBuffer[6] = (payloadBytes.length >>> 8) & 0xff;
-      fullBuffer[7] = payloadBytes.length & 0xff;
-      fullBuffer.set(payloadBytes, 8);
-
-      // Step 1: Embed Screenshot/Camera-Resilient Differential Luminance Grid + 4 Corner Bullseyes
-      let gridEmbedded = false;
-      if (cameraBoost) {
-        gridEmbedded = embedCameraStealthGrid(ctx, width, height, payloadBytes);
-      }
-
-      // Step 2: Write exact pixel LSBs on top (for 100% lossless file-upload recovery)
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const pixels = imgData.data;
-
-      // Force opaque alpha (255) across the image so browser PNG export/import
-      // never alters R/G/B least-significant bits via alpha premultiplication
-      for (let p = 3; p < pixels.length; p += 4) {
-        pixels[p] = 255;
-      }
-
-      let bitIndex = 0;
-      for (let i = 0; i < pixels.length && bitIndex < totalBits; i += 4) {
-        for (let channel = 0; channel < 3 && bitIndex < totalBits; channel++) {
-          const byteIdx = bitIndex >>> 3;
-          const bitOffset = 7 - (bitIndex & 7);
-          const bit = (fullBuffer[byteIdx] >>> bitOffset) & 1;
-          pixels[i + channel] = (pixels[i + channel] & 0xfe) | bit;
-          bitIndex++;
-        }
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-
-      const noteEl = document.getElementById('stego-grid-capacity-note');
-      if (noteEl && cameraBoost) {
-        if (gridEmbedded) {
-          noteEl.innerHTML = `<span class="text-emerald-700 font-semibold">✓ Screenshot &amp; Camera Grid Active (${payloadBytes.length}/342 bytes)</span> — Survives screenshots, cropping, and camera scans.`;
-        } else {
-          noteEl.innerHTML = `<span class="text-amber-700 font-semibold">⚠ Payload (${payloadBytes.length} bytes) exceeds 342-byte Camera/Screenshot Grid</span> — Lossless PNG upload works, or shorten item names for camera/screenshot scanning.`;
-        }
-      }
-    }
-
-    /**
-     * Computes standard CRC-16/CCITT-FALSE checksum over a Uint8Array
-     */
-    function computeCRC16(bytes) {
-      let crc = 0xffff;
-      for (let i = 0; i < bytes.length; i++) {
-        crc ^= bytes[i] << 8;
-        for (let j = 0; j < 8; j++) {
-          if (crc & 0x8000) {
-            crc = ((crc << 1) ^ 0x1021) & 0xffff;
-          } else {
-            crc = (crc << 1) & 0xffff;
-          }
-        }
-      }
-      return crc & 0xffff;
-    }
-
-    /**
-     * Embeds a screenshot & camera-survivable differential luminance watermark grid
-     * (64 cols x 44 rows = 2,816 bits = 352 bytes total: 10-byte RSC1+len+CRC16 header + up to 342 payload bytes)
-     * plus 4 unmistakable concentric bullseye finder targets at normalized (0.04, 0.04) insets.
-     */
-    function embedCameraStealthGrid(ctx, width, height, payloadBytes) {
-      const cols = 64;
-      const rows = 44;
-      const headerSize = 10; // "RSC1" (4B) + length (2B) + crc16 (2B) + reserved/version (2B)
-      const maxPayloadBytes = Math.floor((cols * rows) / 8) - headerSize; // 342 bytes
-      if (payloadBytes.length > maxPayloadBytes) {
-        return false;
-      }
-
-      const crc = computeCRC16(payloadBytes);
-      const packet = new Uint8Array(headerSize + payloadBytes.length);
-      packet[0] = 0x52; // 'R'
-      packet[1] = 0x53; // 'S'
-      packet[2] = 0x43; // 'C'
-      packet[3] = 0x31; // '1'
-      packet[4] = (payloadBytes.length >>> 8) & 0xff;
-      packet[5] = payloadBytes.length & 0xff;
-      packet[6] = (crc >>> 8) & 0xff;
-      packet[7] = crc & 0xff;
-      packet[8] = 0x01; // Grid format v1
-      packet[9] = 0x5a; // Sync marker byte
-      packet.set(payloadBytes, headerSize);
-
-      // Normalized grid bounds inside the 4% corner finder target centers
-      const insetX = width * 0.04;
-      const insetY = height * 0.04;
-      const gridX = insetX + width * 0.03;
-      const gridY = insetY + height * 0.03;
-      const gridW = width - gridX * 2;
-      const gridH = height - gridY * 2;
-      const cellW = gridW / cols;
-      const cellH = gridH / rows;
-
-      // Read strength setting (default 17 luminance units)
-      const strengthVal = parseFloat(document.getElementById('stego-strength-select')?.value || '17') || 17;
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-
-      // Apply balanced luminance delta directly to RGB channels inside each cell's left/right halves
-      // Leaves outer 12% border of each cell untouched to prevent inter-cell bleed under JPEG/camera blur
-      for (let bitIdx = 0; bitIdx < packet.length * 8; bitIdx++) {
-        const byteVal = packet[bitIdx >>> 3];
-        const bit = (byteVal >>> (7 - (bitIdx & 7))) & 1;
-        const r = Math.floor(bitIdx / cols);
-        const c = bitIdx % cols;
-
-        const x0 = gridX + c * cellW;
-        const y0 = gridY + r * cellH;
-        const padX = cellW * 0.08;
-        const padY = cellH * 0.12;
-        const midX = x0 + cellW * 0.5;
-
-        const leftDelta = bit ? strengthVal : -strengthVal;
-        const rightDelta = bit ? -strengthVal : strengthVal;
-
-        const startY = Math.max(0, Math.round(y0 + padY));
-        const endY = Math.min(height - 1, Math.round(y0 + cellH - padY));
-
-        // Left half
-        const lStartX = Math.max(0, Math.round(x0 + padX));
-        const lEndX = Math.min(width - 1, Math.round(midX - padX * 0.5));
-        for (let py = startY; py <= endY; py++) {
-          for (let px = lStartX; px <= lEndX; px++) {
-            const idx = (py * width + px) * 4;
-            data[idx] = Math.max(0, Math.min(255, data[idx] + leftDelta));
-            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + leftDelta));
-            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + leftDelta));
-          }
-        }
-
-        // Right half
-        const rStartX = Math.max(0, Math.round(midX + padX * 0.5));
-        const rEndX = Math.min(width - 1, Math.round(x0 + cellW - padX));
-        for (let py = startY; py <= endY; py++) {
-          for (let px = rStartX; px <= rEndX; px++) {
-            const idx = (py * width + px) * 4;
-            data[idx] = Math.max(0, Math.min(255, data[idx] + rightDelta));
-            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + rightDelta));
-            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + rightDelta));
-          }
-        }
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-
-      // Draw 4 unmistakable high-contrast concentric bullseye finder targets at 4% normalized insets
-      // Ratio pattern across diameter: Dark : Bright : Dark : White-Pinpoint : Dark : Bright : Dark
-      const radius = Math.max(12, Math.round(Math.min(width, height) * 0.026));
-      const corners = [
-        [insetX, insetY],
-        [width - insetX, insetY],
-        [width - insetX, height - insetY],
-        [insetX, height - insetY],
-      ];
-
-      corners.forEach(([cx, cy]) => {
-        ctx.save();
-        // Outer dark halo
-        ctx.fillStyle = '#090d16';
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Crisp bright ring
-        ctx.fillStyle = '#f8fafc';
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius * 0.72, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Inner dark bullseye
-        ctx.fillStyle = '#090d16';
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius * 0.44, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Center white pinpoint
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(cx, cy, Math.max(1.8, radius * 0.17), 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-
-      return true;
-    }
-
-    /**
-     * Scans an ImageData buffer for concentric bullseye finder targets in all 4 quadrants.
-     * Returns an array of candidate quads: [{ tl, tr, br, bl, score }, ...]
-     */
-    function detectStealthFinderCorners(imgData) {
-      const { width, height, data } = imgData;
-      if (width < 120 || height < 90) return [];
-
-      // Downsample large screenshots/photos to ~560px max side for fast, noise-resistant finder search
-      const scale = Math.min(1, 560 / Math.max(width, height));
-      const sw = Math.max(80, Math.round(width * scale));
-      const sh = Math.max(60, Math.round(height * scale));
-      const lum = new Float32Array(sw * sh);
-
-      for (let y = 0; y < sh; y++) {
-        const sy = Math.min(height - 1, Math.floor(y / scale));
-        for (let x = 0; x < sw; x++) {
-          const sx = Math.min(width - 1, Math.floor(x / scale));
-          const idx = (sy * width + sx) * 4;
-          lum[y * sw + x] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-        }
-      }
-
-      const getL = (x, y) => {
-        const ix = Math.max(0, Math.min(sw - 1, x));
-        const iy = Math.max(0, Math.min(sh - 1, y));
-        return lum[iy * sw + ix];
-      };
-
-      // Score how closely (cx, cy) matches a concentric bullseye (bright center pinpoint, dark inner ring, bright outer ring, dark outer rim)
-      const scoreBullseye = (cx, cy, r) => {
-        const cLum = getL(cx, cy);
-        let darkInner = 0;
-        let brightMid = 0;
-        let darkOuter = 0;
-        const r1 = Math.max(1, Math.round(r * 0.34));
-        const r2 = Math.max(2, Math.round(r * 0.62));
-        const r3 = Math.max(3, Math.round(r * 0.92));
-
-        // Sample 8 compass directions
-        const dirs = [
-          [1, 0], [-1, 0], [0, 1], [0, -1],
-          [0.707, 0.707], [-0.707, 0.707], [0.707, -0.707], [-0.707, -0.707],
-        ];
-        for (let i = 0; i < 8; i++) {
-          const [dx, dy] = dirs[i];
-          darkInner += getL(Math.round(cx + dx * r1), Math.round(cy + dy * r1));
-          brightMid += getL(Math.round(cx + dx * r2), Math.round(cy + dy * r2));
-          darkOuter += getL(Math.round(cx + dx * r3), Math.round(cy + dy * r3));
-        }
-        darkInner /= 8;
-        brightMid /= 8;
-        darkOuter /= 8;
-
-        // Require clear contrast transitions: brightMid significantly brighter than both darkInner and darkOuter
-        const c1 = brightMid - darkInner;
-        const c2 = brightMid - darkOuter;
-        const c3 = cLum - darkInner;
-        if (c1 < 38 || c2 < 35 || c3 < 20) return 0;
-
-        // Symmetry check: ensure all 4 cardinal points on the bright ring are consistently bright
-        const bN = getL(cx, cy - r2);
-        const bS = getL(cx, cy + r2);
-        const bW = getL(cx - r2, cy);
-        const bE = getL(cx + r2, cy);
-        const ringSpread = Math.max(bN, bS, bW, bE) - Math.min(bN, bS, bW, bE);
-        if (ringSpread > 65) return 0;
-
-        return c1 + c2 + c3 * 0.6 - ringSpread * 0.5;
-      };
-
-      const candidates = [];
-      const radii = [5, 7, 9, 12, 15];
-      const step = 2;
-
-      for (let y = 10; y < sh - 10; y += step) {
-        for (let x = 10; x < sw - 10; x += step) {
-          let bestScore = 0;
-          let bestR = 7;
-          for (let ri = 0; ri < radii.length; ri++) {
-            const r = radii[ri];
-            if (x - r < 2 || x + r >= sw - 2 || y - r < 2 || y + r >= sh - 2) continue;
-            const sc = scoreBullseye(x, y, r);
-            if (sc > bestScore) {
-              bestScore = sc;
-              bestR = r;
-            }
-          }
-          if (bestScore > 115) {
-            // Refine center to 1px precision
-            let rx = x;
-            let ry = y;
-            for (let dy = -1; dy <= 1; dy++) {
-              for (let dx = -1; dx <= 1; dx++) {
-                const sc = scoreBullseye(x + dx, y + dy, bestR);
-                if (sc > bestScore) {
-                  bestScore = sc;
-                  rx = x + dx;
-                  ry = y + dy;
-                }
-              }
-            }
-            candidates.push({
-              x: rx / scale,
-              y: ry / scale,
-              r: bestR / scale,
-              score: bestScore,
-            });
-          }
-        }
-      }
-
-      if (candidates.length < 4) return [];
-
-      // Non-maximum suppression: merge nearby detections within 18px (scaled)
-      candidates.sort((a, b) => b.score - a.score);
-      const peaks = [];
-      const minSep = Math.max(16, Math.min(width, height) * 0.03);
-      for (const cand of candidates) {
-        if (!peaks.some((p) => Math.hypot(p.x - cand.x, p.y - cand.y) < minSep)) {
-          peaks.push(cand);
-          if (peaks.length >= 16) break;
-        }
-      }
-
-      if (peaks.length < 4) return [];
-
-      // Partition peaks into Top-Left, Top-Right, Bottom-Right, Bottom-Left relative to candidate centroid
-      const quads = [];
-      for (let i = 0; i < peaks.length; i++) {
-        for (let j = i + 1; j < peaks.length; j++) {
-          for (let k = j + 1; k < peaks.length; k++) {
-            for (let l = k + 1; l < peaks.length; l++) {
-              const pts = [peaks[i], peaks[j], peaks[k], peaks[l]];
-              const cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x) / 4;
-              const cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y) / 4;
-
-              let tl = null, tr = null, br = null, bl = null;
-              for (const p of pts) {
-                if (p.x < cx && p.y < cy) tl = p;
-                else if (p.x >= cx && p.y < cy) tr = p;
-                else if (p.x >= cx && p.y >= cy) br = p;
-                else if (p.x < cx && p.y >= cy) bl = p;
-              }
-              if (!tl || !tr || !br || !bl) continue;
-
-              // Validate approximate rectangular/perspective geometry (aspect ratio ~1.1 to 2.1, opposite sides parallel-ish)
-              const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
-              const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
-              const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
-              const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
-
-              if (topW < 80 || leftH < 50) continue;
-              const widthRatio = Math.min(topW, botW) / Math.max(topW, botW);
-              const heightRatio = Math.min(leftH, rightH) / Math.max(leftH, rightH);
-              if (widthRatio < 0.72 || heightRatio < 0.72) continue;
-
-              const avgW = (topW + botW) * 0.5;
-              const avgH = (leftH + rightH) * 0.5;
-              const aspect = avgW / avgH;
-              if (aspect < 1.05 || aspect > 2.2) continue;
-
-              // Prefer quads whose aspect ratio is closest to the standard 3:2 (1.5) target layout
-              const aspectPenalty = Math.abs(aspect - 1.5) * 120;
-              const quadScore = tl.score + tr.score + br.score + bl.score - aspectPenalty;
-              quads.push({ tl, tr, br, bl, score: quadScore });
-            }
-          }
-        }
-      }
-
-      quads.sort((a, b) => b.score - a.score);
-      return quads.slice(0, 6);
-    }
-
-    /**
-     * Decodes the Camera/Screenshot-Resilient Stealth Luminance Grid using bilinear perspective
-     * mapping from the 4 detected corner bullseye targets (with fallback to full-frame / crop sampling).
-     * Validates "RSC1" header + 16-bit CRC checksum to guarantee zero false positives.
-     */
-    function extractCameraStealthGridFromImageData(imgData, returnMeta = false) {
-      const { width, height, data } = imgData;
-      const cols = 64;
-      const rows = 44;
-      const headerSize = 10;
-
-      // Bilinear sub-pixel luminance sampler
-      const sampleLumBilinear = (px, py) => {
-        const x = Math.max(0, Math.min(width - 1.001, px));
-        const y = Math.max(0, Math.min(height - 1.001, py));
-        const x0 = Math.floor(x);
-        const y0 = Math.floor(y);
-        const x1 = Math.min(width - 1, x0 + 1);
-        const y1 = Math.min(height - 1, y0 + 1);
-        const fx = x - x0;
-        const fy = y - y0;
-
-        const lumAt = (ix, iy) => {
-          const idx = (iy * width + ix) * 4;
-          return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-        };
-
-        const l00 = lumAt(x0, y0);
-        const l10 = lumAt(x1, y0);
-        const l01 = lumAt(x0, y1);
-        const l11 = lumAt(x1, y1);
-        return (l00 * (1 - fx) + l10 * fx) * (1 - fy) + (l01 * (1 - fx) + l11 * fx) * fy;
-      };
-
-      // Map normalized image coordinates (u, v) in [0..1] across the quadrilateral defined by the 4 corner bullseyes
-      // Note: The 4 corner bullseyes sit at normalized (0.04, 0.04), (0.96, 0.04), (0.96, 0.96), (0.04, 0.96)
-      // of the original embedded image!
-      const decodeFromQuad = (quad) => {
-        const mapUV = (u, v) => {
-          // Convert full-image (u, v) to bullseye-quad normalized coordinates (qu, qv)
-          const qu = (u - 0.04) / 0.92;
-          const qv = (v - 0.04) / 0.92;
-          const topX = quad.tl.x + (quad.tr.x - quad.tl.x) * qu;
-          const topY = quad.tl.y + (quad.tr.y - quad.tl.y) * qu;
-          const botX = quad.bl.x + (quad.br.x - quad.bl.x) * qu;
-          const botY = quad.bl.y + (quad.br.y - quad.bl.y) * qu;
-          return [
-            topX + (botX - topX) * qv,
-            topY + (botY - topY) * qv,
-          ];
-        };
-
-        // Grid occupies u in [0.07, 0.93], v in [0.07, 0.93]
-        const uStart = 0.07;
-        const vStart = 0.07;
-        const uSpan = 0.86;
-        const vSpan = 0.86;
-        const cellU = uSpan / cols;
-        const cellV = vSpan / rows;
-
-        // Multi-point vertical averaging inside each cell half to suppress JPEG/camera noise
-        const sampleCellBit = (r, c) => {
-          const u0 = uStart + c * cellU;
-          const v0 = vStart + r * cellV;
-          let leftSum = 0;
-          let rightSum = 0;
-          const vOffsets = [0.3, 0.5, 0.7];
-          for (let vi = 0; vi < vOffsets.length; vi++) {
-            const vSample = v0 + cellV * vOffsets[vi];
-            const [lx, ly] = mapUV(u0 + cellU * 0.25, vSample);
-            const [rx, ry] = mapUV(u0 + cellU * 0.75, vSample);
-            leftSum += sampleLumBilinear(lx, ly);
-            rightSum += sampleLumBilinear(rx, ry);
-          }
-          return leftSum > rightSum ? 1 : 0;
-        };
-
-        const readPacketBytes = (startByte, count) => {
-          const out = new Uint8Array(count);
-          for (let b = 0; b < count; b++) {
-            let val = 0;
-            for (let bit = 0; bit < 8; bit++) {
-              const bitIdx = (startByte + b) * 8 + bit;
-              const r = Math.floor(bitIdx / cols);
-              const c = bitIdx % cols;
-              if (r >= rows) return null;
-              val = (val << 1) | sampleCellBit(r, c);
-            }
-            out[b] = val;
-          }
-          return out;
-        };
-
-        const header = readPacketBytes(0, headerSize);
-        if (!header) return null;
-
-        // Check magic "RSC1"
-        if (header[0] !== 0x52 || header[1] !== 0x53 || header[2] !== 0x43 || header[3] !== 0x31) {
-          return null;
-        }
-
-        const payloadLen = (header[4] << 8) | header[5];
-        const expectedCrc = (header[6] << 8) | header[7];
-        const maxPayloadBytes = Math.floor((cols * rows) / 8) - headerSize;
-        if (payloadLen <= 0 || payloadLen > maxPayloadBytes) return null;
-
-        const payloadBytes = readPacketBytes(headerSize, payloadLen);
-        if (!payloadBytes) return null;
-
-        // Verify 16-bit CRC checksum so corrupted frames never produce garbage JSON
-        const actualCrc = computeCRC16(payloadBytes);
-        if (actualCrc !== expectedCrc) return null;
-
-        try {
-          return new TextDecoder('utf-8', { fatal: true }).decode(payloadBytes);
-        } catch (e) {
-          return null;
-        }
-      };
-
-      // 1. Primary path: Detect the 4 corner bullseye targets anywhere in the screenshot or camera frame
-      const detectedQuads = detectStealthFinderCorners(imgData);
-      for (const quad of detectedQuads) {
-        const decoded = decodeFromQuad(quad);
-        if (decoded) {
-          return returnMeta ? { payload: decoded, quad } : decoded;
-        }
-      }
-
-      // 2. Fallback path: If user cropped tightly right to the image edges without outer padding
-      const fullQuad = {
-        tl: { x: width * 0.04, y: height * 0.04 },
-        tr: { x: width * 0.96, y: height * 0.04 },
-        br: { x: width * 0.96, y: height * 0.96 },
-        bl: { x: width * 0.04, y: height * 0.96 },
-      };
-      const fullDecoded = decodeFromQuad(fullQuad);
-      if (fullDecoded) {
-        return returnMeta ? { payload: fullDecoded, quad: fullQuad } : fullDecoded;
-      }
-
-      return null;
-    }
-
-    /**
-     * Extracts hidden UTF-8 payload from RGB Least Significant Bits if "RSL1" header is present
-     * Returns decoded string or null if image does not contain a ReceiptSeal stego header
-     */
-    function extractPayloadFromImageDataLSB(imgData) {
-      const pixels = imgData.data;
-      const maxBytes = Math.floor(((pixels.length / 4) * 3) / 8);
-      if (maxBytes < 12) return null;
-
-      // Helper to read N bytes starting at byteOffset
-      const readBytes = (startByte, count) => {
-        const out = new Uint8Array(count);
-        for (let b = 0; b < count; b++) {
-          let val = 0;
-          const baseBit = (startByte + b) * 8;
-          for (let bit = 0; bit < 8; bit++) {
-            const globalBit = baseBit + bit;
-            const pixelIdx = Math.floor(globalBit / 3) * 4;
-            const channel = globalBit % 3;
-            const lsb = pixels[pixelIdx + channel] & 1;
-            val = (val << 1) | lsb;
-          }
-          out[b] = val;
-        }
-        return out;
-      };
-
-      const header = readBytes(0, 8);
-      // Verify magic "RSL1"
-      if (header[0] !== 0x52 || header[1] !== 0x53 || header[2] !== 0x4c || header[3] !== 0x31) {
-        return null;
-      }
-
-      const payloadLen =
-        ((header[4] << 24) >>> 0) +
-        (header[5] << 16) +
-        (header[6] << 8) +
-        header[7];
-
-      if (payloadLen <= 0 || 8 + payloadLen > maxBytes) {
-        return null;
-      }
-
-      const payloadBytes = readBytes(8, payloadLen);
-      return new TextDecoder().decode(payloadBytes);
-    }
-
-    /**
-     * Collects invoice form data, builds compact payload (NO expiration timestamp),
-     * signs with ECDSA P-256, renders QR code or Stego PNG, and saves to localStorage.
-     */
     async function handleSignAndGenerate() {
       if (!appState.privateKey) {
         showToast('Cannot sign: No Private Key loaded. Check Key Management.', 'error');
@@ -2955,7 +2257,7 @@
 
       const id = document.getElementById('issue-inv-id').value.trim();
       const dt = document.getElementById('issue-date').value.trim();
-      const cur = document.getElementById('issue-currency').value.trim() || 'USD';
+      const c = document.getElementById('issue-currency').value.trim() || 'USD';
       const m = document.getElementById('issue-merchant').value.trim();
 
       if (!id) {
@@ -2968,6 +2270,7 @@
       }
 
       const items = [];
+      let grandTotal = 0;
       const rows = document.querySelectorAll('.line-item-row');
       for (const row of rows) {
         const name = row.querySelector('.item-name').value.trim();
@@ -2986,16 +2289,17 @@
           showToast(`Invalid unit price for "${name}".`, 'error');
           return;
         }
-        // Compact tuple format: [name, qty, unitPrice]
         items.push([name, Number(qty), Number(price)]);
+        grandTotal = Math.round((grandTotal + qty * price) * 100) / 100;
       }
 
-      // Build ultra-compact receipt data object (strictly NO expiration timestamp)
+      // Compact receipt data object (strictly NO expiration timestamp)
       const receiptData = {
         id,
         dt,
-        cur,
-        items,
+        c,
+        i: items,
+        t: grandTotal,
       };
       if (m) {
         receiptData.m = m;
@@ -3010,22 +2314,21 @@
         appState.lastGeneratedInvId = id;
         appState.lastGeneratedCarrier = appState.issueCarrierMode;
 
-        const canvas = document.getElementById('generated-qr-canvas');
-        const stegoPill = document.getElementById('stego-active-pill');
+        const canvas = document.getElementById('generated-seal-canvas');
+        const mosaicBadge = document.getElementById('mosaic-active-badge');
         const dlBtnText = document.getElementById('btn-download-seal-text');
 
-        if (appState.issueCarrierMode === 'stego') {
-          if (!appState.coverImage) {
-            generateThemedCoverArtwork('gold', true);
+        if (appState.issueCarrierMode === 'mosaic') {
+          if (!appState.mosaicCoverImage) {
+            generateProceduralArtTheme('emerald', true);
           }
-          embedPayloadIntoCanvasLSB(appState.coverImage, canvas, compactJsonString, signedEnvelope);
-          stegoPill.classList.remove('hidden');
+          embedMosaicArtCard(appState.mosaicCoverImage, canvas, compactJsonString, signedEnvelope);
+          mosaicBadge.classList.remove('hidden');
           dlBtnText.textContent = 'Download Mosaic PNG';
         } else {
-          // Ensure QRCode library is loaded, then render high-contrast QR code onto canvas
           const qrLib = await ensureQRCodeLibrary();
           await qrLib.toCanvas(canvas, compactJsonString, {
-            width: 280,
+            width: 300,
             margin: 2,
             errorCorrectionLevel: 'M',
             color: {
@@ -3033,33 +2336,36 @@
               light: '#ffffff',
             },
           });
-          stegoPill.classList.add('hidden');
+          mosaicBadge.classList.add('hidden');
           dlBtnText.textContent = 'Download / Save QR PNG';
         }
 
-        // Sync hidden canvas to a real <img> element so iOS Safari users can also long-press directly
-        const previewImg = document.getElementById('generated-qr-img');
+        const previewImg = document.getElementById('generated-seal-img');
         if (previewImg) {
           previewImg.src = canvas.toDataURL('image/png');
         }
 
-        document.getElementById('qr-empty-state').classList.add('hidden');
-        document.getElementById('qr-result-container').classList.remove('hidden');
-        const byteBadge = document.getElementById('qr-byte-badge');
+        document.getElementById('seal-empty-state').classList.add('hidden');
+        document.getElementById('seal-result-container').classList.remove('hidden');
+        const byteBadge = document.getElementById('seal-byte-badge');
         byteBadge.textContent = `${byteLength} bytes`;
         byteBadge.classList.remove('hidden');
         document.getElementById('generated-payload-preview').textContent = compactJsonString;
 
-        // Save to LocalStorage Vault
-        saveReceiptToVault(signedEnvelope, appState.issueCarrierMode === 'stego' ? 'Issued (Stego)' : 'Issued', true);
+        saveReceiptToVault(
+          signedEnvelope,
+          appState.issueCarrierMode === 'mosaic' ? 'Issued (Mosaic Card)' : 'Issued (QR)',
+          true
+        );
+
         showToast(
-          appState.issueCarrierMode === 'stego'
-            ? `Receipt ${id} signed & invisibly embedded into PNG!`
-            : `Receipt ${id} signed & QR generated!`,
+          appState.issueCarrierMode === 'mosaic'
+            ? `Receipt ${id} signed & encoded into RSB2 Mosaic Art Card!`
+            : `Receipt ${id} signed & QR Code generated!`,
           'success'
         );
       } catch (err) {
-        console.error('Signing/Seal error:', err);
+        console.error('Seal generation error:', err);
         showToast('Error generating seal: ' + err.message, 'error');
       }
     }
@@ -3094,17 +2400,12 @@
       return new Blob([u8arr], { type: mime });
     }
 
-    /**
-     * Multi-tier PNG save helper compatible with iOS Safari, iPadOS, Android, and Desktop browsers.
-     */
     async function saveCanvasAsPngCrossPlatform(canvas, filename) {
       if (!canvas) return;
       const dataUrl = canvas.toDataURL('image/png');
       const blob = await canvasToPngBlob(canvas);
       const isIOS = isIOSDevice();
 
-      // Tier 1: On iOS/iPadOS or mobile devices, try native Web Share API with PNG File
-      // so user gets "Save Image" (Apple Photos) and "Save to Files" directly
       if (isIOS && navigator.share && navigator.canShare) {
         try {
           const file = new File([blob], filename, { type: 'image/png' });
@@ -3117,20 +2418,16 @@
             return;
           }
         } catch (err) {
-          // User cancelled share sheet -> exit quietly
           if (err && err.name === 'AbortError') return;
-          console.warn('Web Share API unavailable or blocked in WebView, falling back to iOS image modal:', err);
+          console.warn('Web Share API unavailable, opening iOS Save Modal:', err);
         }
       }
 
-      // Tier 2: On iOS/iPadOS when Web Share is blocked (e.g., sandboxed iframe/in-app browser),
-      // show a dedicated modal with a real <img> element for long-press "Save to Photos"
       if (isIOS) {
         openIosSaveModal(dataUrl, blob, filename);
         return;
       }
 
-      // Tier 3: Standard Desktop / Android Blob URL download
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = filename;
@@ -3164,17 +2461,17 @@
       document.getElementById('ios-save-modal').classList.add('hidden');
     }
 
-    async function downloadGeneratedQR() {
-      const canvas = document.getElementById('generated-qr-canvas');
+    async function downloadGeneratedSeal() {
+      const canvas = document.getElementById('generated-seal-canvas');
       if (!canvas) return;
       const safeId = (appState.lastGeneratedInvId || 'receipt').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const prefix = appState.lastGeneratedCarrier === 'stego' ? 'ReceiptSeal_Stego_' : 'ReceiptSeal_';
+      const prefix = appState.lastGeneratedCarrier === 'mosaic' ? 'ReceiptSeal_Mosaic_' : 'ReceiptSeal_QR_';
       await saveCanvasAsPngCrossPlatform(canvas, `${prefix}${safeId}.png`);
     }
 
     function copyGeneratedPayload() {
       if (!appState.lastGeneratedPayload) return;
-      copyRawStringToClipboard(appState.lastGeneratedPayload, 'Signed QR JSON Payload');
+      copyRawStringToClipboard(appState.lastGeneratedPayload, 'Signed Receipt JSON');
     }
 
     function sendGeneratedToVerifier() {
@@ -3186,7 +2483,7 @@
     }
 
     // =========================================================================
-    // 4. VERIFY RECEIPT TAB (CAMERA, IMAGE UPLOAD, TEXT PASTE)
+    // 6. VERIFY RECEIPT TAB (CAMERA HUD, IMAGE UPLOAD, & PASTE JSON)
     // =========================================================================
 
     function setVerifyInputMode(mode) {
@@ -3209,15 +2506,12 @@
       });
     }
 
-    /**
-     * Starts live WebRTC camera stream and scans frames continuously using jsQR
-     */
     async function startCameraScanner() {
       const errorEl = document.getElementById('camera-error-msg');
       errorEl.classList.add('hidden');
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        errorEl.textContent = 'Camera API is not supported in this browser or requires HTTPS.';
+        errorEl.textContent = 'Camera API requires HTTPS or a supported browser.';
         errorEl.classList.remove('hidden');
         return;
       }
@@ -3235,7 +2529,6 @@
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         appState.cameraStream = stream;
 
-        // Populate available cameras selector if multiple exist
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter((d) => d.kind === 'videoinput');
         if (videoDevices.length > 1) {
@@ -3256,74 +2549,81 @@
         document.getElementById('btn-start-camera').classList.add('hidden');
         document.getElementById('btn-stop-camera').classList.remove('hidden');
 
-        // Start frame scanning loop
-            // 2. Visualize detected Art-Card Mosaic Corner Targets on live camera HUD
-            const candidateQuads = detectMosaicCardCorners(imageData);
-            const statusPill = document.getElementById('scanner-status-pill');
-            if (candidateQuads.length > 0) {
-              const best = candidateQuads[0];
-              hudCtx.save();
-              hudCtx.strokeStyle = '#34d399';
-              hudCtx.lineWidth = 3;
-              hudCtx.beginPath();
-              hudCtx.moveTo(best.tl.x, best.tl.y);
-              hudCtx.lineTo(best.tr.x, best.tr.y);
-              hudCtx.lineTo(best.br.x, best.br.y);
-              hudCtx.lineTo(best.bl.x, best.bl.y);
-              hudCtx.closePath();
-              hudCtx.stroke();
+        const scanCanvas = document.getElementById('qr-scan-canvas');
+        const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+        const hudCanvas = document.getElementById('qr-hud-canvas');
+        const hudCtx = hudCanvas.getContext('2d');
+        hudCanvas.classList.remove('hidden');
 
-              [best.tl, best.tr, best.br, best.bl].forEach((pt) => {
-                hudCtx.fillStyle = '#fbbf24';
-                hudCtx.beginPath();
-                hudCtx.arc(pt.x, pt.y, 7, 0, Math.PI * 2);
-                hudCtx.fill();
-              });
-              hudCtx.restore();
-              if (statusPill) {
-                statusPill.textContent = 'Mosaic Card Targets Locked — Decoding...';
+        let frameCounter = 0;
+
+        const tick = () => {
+          if (!appState.cameraStream) return;
+
+          if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            scanCanvas.width = vw;
+            scanCanvas.height = vh;
+            hudCanvas.width = vw;
+            hudCanvas.height = vh;
+
+            scanCtx.drawImage(video, 0, 0, vw, vh);
+            const imageData = scanCtx.getImageData(0, 0, vw, vh);
+            hudCtx.clearRect(0, 0, vw, vh);
+
+            // 1. Standard QR code detection via jsQR
+            if (typeof window.jsQR === 'function') {
+              const qrCode = window.jsQR(imageData.data, vw, vh, { inversionAttempts: 'dontInvert' });
+              if (qrCode && qrCode.data) {
+                stopCameraScanner();
+                showToast('QR Code scanned from camera!', 'info');
+                verifyRawPayloadString(qrCode.data, true);
+                return;
               }
-            } else if (statusPill) {
-              statusPill.textContent = 'Align QR Code or Mosaic Art Card inside frame';
             }
 
-            // 2. Visualize detected Stealth Corner Targets on live camera HUD
-            const candidateQuads = detectStealthFinderCorners(imageData);
-            const statusPill = document.getElementById('scanner-status-pill');
-            if (candidateQuads.length > 0) {
-              const best = candidateQuads[0];
-              hudCtx.save();
-              hudCtx.strokeStyle = '#34d399';
-              hudCtx.lineWidth = 3;
-              hudCtx.beginPath();
-              hudCtx.moveTo(best.tl.x, best.tl.y);
-              hudCtx.lineTo(best.tr.x, best.tr.y);
-              hudCtx.lineTo(best.br.x, best.br.y);
-              hudCtx.lineTo(best.bl.x, best.bl.y);
-              hudCtx.closePath();
-              hudCtx.stroke();
+            // 2. RSB2 Mosaic Art-Card corner-lock HUD & decoding (throttled every 2nd frame for smooth 60fps)
+            frameCounter++;
+            if (frameCounter % 2 === 0) {
+              const candidateQuads = detectMosaicCardCorners(imageData);
+              const statusPill = document.getElementById('scanner-status-pill');
 
-              [best.tl, best.tr, best.br, best.bl].forEach((pt) => {
-                hudCtx.fillStyle = '#fbbf24';
+              if (candidateQuads.length > 0) {
+                const best = candidateQuads[0];
+                hudCtx.save();
+                hudCtx.strokeStyle = '#34d399';
+                hudCtx.lineWidth = Math.max(3, Math.round(vw * 0.004));
                 hudCtx.beginPath();
-                hudCtx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
-                hudCtx.fill();
-              });
-              hudCtx.restore();
-              if (statusPill) {
-                statusPill.textContent = 'Stealth Targets Locked — Decoding...';
-              }
-            } else if (statusPill) {
-              statusPill.textContent = 'Align QR Code or Stealth Image inside frame';
-            }
+                hudCtx.moveTo(best.tl.x, best.tl.y);
+                hudCtx.lineTo(best.tr.x, best.tr.y);
+                hudCtx.lineTo(best.br.x, best.br.y);
+                hudCtx.lineTo(best.bl.x, best.bl.y);
+                hudCtx.closePath();
+                hudCtx.stroke();
 
-            // 3. Try Camera-Scannable Stealth Watermark Grid detection
-            const stealthResult = extractCameraStealthGridFromImageData(imageData, true);
-            if (stealthResult && stealthResult.payload) {
-              stopCameraScanner();
-              showToast('Stealth Watermark Image detected from camera!', 'info');
-              verifyRawPayloadString(stealthResult.payload, true);
-              return;
+                [best.tl, best.tr, best.br, best.bl].forEach((pt, idx) => {
+                  hudCtx.fillStyle = idx === 0 ? '#fbbf24' : '#34d399';
+                  hudCtx.beginPath();
+                  hudCtx.arc(pt.x, pt.y, Math.max(6, Math.round(vw * 0.009)), 0, Math.PI * 2);
+                  hudCtx.fill();
+                });
+                hudCtx.restore();
+
+                if (statusPill) {
+                  statusPill.textContent = 'Mosaic Targets Locked — Decoding...';
+                }
+
+                const mosaicResult = extractMosaicCardFromImageData(imageData, true);
+                if (mosaicResult && mosaicResult.payload) {
+                  stopCameraScanner();
+                  showToast('Mosaic Art Card decoded from camera!', 'info');
+                  verifyRawPayloadString(mosaicResult.payload, true);
+                  return;
+                }
+              } else if (statusPill) {
+                statusPill.textContent = 'Align QR Code or Mosaic Art Card inside frame';
+              }
             }
           }
           appState.cameraAnimFrame = requestAnimationFrame(tick);
@@ -3367,8 +2667,10 @@
     }
 
     /**
-     * Decodes an uploaded image file by first checking for ReceiptSeal LSB steganography,
-     * and falling back to standard QR code detection via jsQR.
+     * 3-Stage Image File Verification Pipeline:
+     *   1. Lossless RSL1 LSB extractor (original PNGs)
+     *   2. RSB2 Multi-Orientation Differential Mosaic Art-Card decoder (screenshots, chat compression, rotations)
+     *   3. jsQR standard QR code scanner
      */
     function handleQRImageUpload(event) {
       const file = event.target.files && event.target.files[0];
@@ -3387,32 +2689,36 @@
           ctx.drawImage(img, 0, 0, width, height);
           const imageData = ctx.getImageData(0, 0, width, height);
 
-          // 1. Check for sneaky LSB steganography payload first
-          const stegoPayload = extractPayloadFromImageDataLSB(imageData);
-          if (stegoPayload) {
-            showToast('Hidden ReceiptSeal steganography payload extracted!', 'info');
-            verifyRawPayloadString(stegoPayload, true);
+          // Stage 1: Lossless RSL1 LSB extraction
+          const lsbPayload = extractPayloadFromImageDataLSB(imageData);
+          if (lsbPayload) {
+            showToast('Lossless RSL1 payload extracted from image!', 'info');
+            verifyRawPayloadString(lsbPayload, true);
             event.target.value = '';
             return;
           }
 
-          // 2. Check for Camera-Scannable Stealth Luminance Grid (even if image was resized/screenshotted)
-          const stealthGridPayload = extractCameraStealthGridFromImageData(imageData);
-          if (stealthGridPayload) {
-            showToast('Stealth Watermark Grid decoded from image!', 'info');
-            verifyRawPayloadString(stealthGridPayload, true);
+          // Stage 2: RSB2 Compression- & Screenshot-Proof Mosaic Art-Card extraction
+          const mosaicPayload = extractMosaicCardFromImageData(imageData, false);
+          if (mosaicPayload) {
+            showToast('RSB2 Mosaic Art Card decoded from image!', 'info');
+            verifyRawPayloadString(mosaicPayload, true);
             event.target.value = '';
             return;
           }
 
-          // 3. Fallback: Check for visible QR code via jsQR
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
-          if (code && code.data) {
-            showToast('QR Code decoded from image!', 'info');
-            verifyRawPayloadString(code.data, true);
-          } else {
-            showToast('No hidden steganography data or QR code found in this image.', 'error');
+          // Stage 3: Standard QR Code detection via jsQR
+          if (typeof window.jsQR === 'function') {
+            const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+            if (code && code.data) {
+              showToast('QR Code decoded from image!', 'info');
+              verifyRawPayloadString(code.data, true);
+              event.target.value = '';
+              return;
+            }
           }
+
+          showToast('No valid ReceiptSeal QR code or Mosaic Art Card found in this image.', 'error');
           event.target.value = '';
         };
         img.onerror = () => showToast('Failed to load image file.', 'error');
@@ -3421,24 +2727,21 @@
       reader.readAsDataURL(file);
     }
 
-    /**
-     * Helper button to alter a character in pasted JSON to demonstrate tamper detection
-     */
     function simulateTamperInPaste() {
       const textarea = document.getElementById('verify-raw-input');
       const val = textarea.value.trim();
       if (!val) {
-        showToast('Paste or load a signed QR payload first before tampering.', 'info');
+        showToast('Paste or load a signed receipt payload first before tampering.', 'info');
         return;
       }
       try {
         const obj = JSON.parse(val);
-        if (obj.d && Array.isArray(obj.d.items) && obj.d.items.length > 0) {
-          // Modify the first item's unit price or quantity slightly
-          const origPrice = Number(obj.d.items[0][2]) || 10;
-          obj.d.items[0][2] = origPrice === 0 ? 1 : Number((origPrice + 1).toFixed(2));
+        const listKey = obj.d && Array.isArray(obj.d.i) ? 'i' : (obj.d && Array.isArray(obj.d.items) ? 'items' : null);
+        if (listKey && obj.d[listKey].length > 0) {
+          const origPrice = Number(obj.d[listKey][0][2]) || 10;
+          obj.d[listKey][0][2] = origPrice === 0 ? 1 : Number((origPrice + 1).toFixed(2));
           textarea.value = JSON.stringify(obj);
-          showToast('Tampered with item price in JSON! Click Verify to test detection.', 'info');
+          showToast('Tampered with item price in JSON! Testing signature check...', 'info');
           verifyRawPayloadString(textarea.value, false);
         } else {
           textarea.value = val.slice(0, -3) + 'XYZ';
@@ -3450,18 +2753,13 @@
       }
     }
 
-    /**
-     * Parses raw QR string, runs ECDSA P-256 signature verification,
-     * updates the Verification Result Card, and optionally saves to Vault.
-     */
     async function verifyRawPayloadString(rawString, saveToHistory = true) {
       const trimmed = (rawString || '').trim();
       if (!trimmed) {
-        showToast('Please enter or scan a QR payload first.', 'error');
+        showToast('Please enter or scan a receipt payload first.', 'error');
         return;
       }
 
-      // Check if user specified an override Public Key on the Verify tab
       let overrideKey = null;
       const overrideRaw = document.getElementById('verify-override-pubkey').value.trim();
       if (overrideRaw) {
@@ -3477,7 +2775,7 @@
       try {
         envelope = JSON.parse(trimmed);
       } catch (err) {
-        renderVerificationResult(false, 'Invalid QR data: Payload is not valid JSON.', null);
+        renderVerificationResult(false, 'Invalid payload: Decoded text is not valid JSON.', null);
         return;
       }
 
@@ -3505,16 +2803,16 @@
         banner.className = 'p-5 flex items-start gap-3.5 bg-emerald-50 text-emerald-950';
         iconBox.className = 'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-emerald-600 text-white';
         iconBox.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
-        titleEl.textContent = '✓ AUTHENTIC RECEIPT — Cryptographic Signature Valid';
+        titleEl.textContent = '✓ AUTHENTIC — Cryptographic Signature Verified';
         titleEl.className = 'text-base sm:text-lg font-extrabold tracking-tight text-emerald-900';
-        subEl.textContent = reasonMessage + ' (No Expiration Date)';
+        subEl.textContent = reasonMessage + ' (Permanent • No Expiration Date)';
         subEl.className = 'text-xs mt-1 leading-relaxed text-emerald-800';
       } else {
         card.classList.add('border-rose-500');
         banner.className = 'p-5 flex items-start gap-3.5 bg-rose-50 text-rose-950';
         iconBox.className = 'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-rose-600 text-white';
         iconBox.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
-        titleEl.textContent = '✕ NOT AUTHENTIC / TAMPERED — Verification Failed';
+        titleEl.textContent = '✕ NOT AUTHENTIC / TAMPERED';
         titleEl.className = 'text-base sm:text-lg font-extrabold tracking-tight text-rose-900';
         subEl.textContent = reasonMessage;
         subEl.className = 'text-xs mt-1 leading-relaxed text-rose-800';
@@ -3526,18 +2824,21 @@
         document.getElementById('v-inv-date').textContent = receiptData.dt || '—';
         document.getElementById('v-inv-merchant').textContent = receiptData.m || 'Unspecified Issuer';
 
-        const cur = receiptData.cur || 'USD';
+        const cur = receiptData.c || receiptData.cur || 'USD';
         const tbody = document.getElementById('v-items-tbody');
         tbody.innerHTML = '';
-        let grandTotal = 0;
+        let computedTotal = 0;
 
-        const items = Array.isArray(receiptData.items) ? receiptData.items : [];
-        items.forEach((item) => {
+        const rawItems = Array.isArray(receiptData.i)
+          ? receiptData.i
+          : (Array.isArray(receiptData.items) ? receiptData.items : []);
+
+        rawItems.forEach((item) => {
           const name = Array.isArray(item) ? item[0] : (item.name || 'Item');
           const qty = Number(Array.isArray(item) ? item[1] : item.qty) || 0;
           const price = Number(Array.isArray(item) ? item[2] : item.price) || 0;
           const total = Math.round(qty * price * 100) / 100;
-          grandTotal += total;
+          computedTotal += total;
 
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -3549,14 +2850,15 @@
           tbody.appendChild(tr);
         });
 
-        document.getElementById('v-grand-total').textContent = `${formatNumber(grandTotal)} ${cur}`;
+        const displayTotal = typeof receiptData.t === 'number' ? receiptData.t : computedTotal;
+        document.getElementById('v-grand-total').textContent = `${formatNumber(displayTotal)} ${cur}`;
       } else {
         detailsBox.classList.add('hidden');
       }
     }
 
     // =========================================================================
-    // 5. LOCALSTORAGE VAULT & LIVE RE-VERIFICATION MODAL
+    // 7. LOCALSTORAGE VAULT & LIVE RE-VERIFICATION MODAL
     // =========================================================================
 
     function getVaultReceipts() {
@@ -3572,12 +2874,11 @@
       const vault = getVaultReceipts();
       const rawJson = JSON.stringify(envelope);
 
-      // Deduplicate by exact signed JSON string
       const existingIdx = vault.findIndex((entry) => entry.rawJson === rawJson);
       const record = {
         uid: existingIdx >= 0 ? vault[existingIdx].uid : 'rcpt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
         savedAt: new Date().toISOString(),
-        source: sourceLabel, // 'Issued' or 'Verified'
+        source: sourceLabel,
         lastKnownValid: initialValid,
         envelope,
         rawJson,
@@ -3589,6 +2890,7 @@
       vault.unshift(record);
       localStorage.setItem(STORAGE_KEYS.VAULT, JSON.stringify(vault));
       updateVaultBadgeCount();
+      renderVaultList();
     }
 
     function updateVaultBadgeCount() {
@@ -3613,9 +2915,11 @@
       gridEl.innerHTML = vault
         .map((rec) => {
           const d = rec.envelope?.d || {};
-          const cur = d.cur || 'USD';
-          const items = Array.isArray(d.items) ? d.items : [];
-          const total = items.reduce((acc, it) => acc + (Number(it[1]) || 0) * (Number(it[2]) || 0), 0);
+          const cur = d.c || d.cur || 'USD';
+          const items = Array.isArray(d.i) ? d.i : (Array.isArray(d.items) ? d.items : []);
+          const computedTotal = items.reduce((acc, it) => acc + (Number(it[1]) || 0) * (Number(it[2]) || 0), 0);
+          const total = typeof d.t === 'number' ? d.t : computedTotal;
+
           const badgeClass = rec.lastKnownValid
             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
             : 'bg-rose-50 text-rose-700 border-rose-200';
@@ -3629,7 +2933,7 @@
                   <span class="text-[11px] font-medium text-slate-400">${escapeHtml(rec.source)}</span>
                 </div>
                 <div>
-                  <h3 class="text-sm font-bold font-mono text-slate-900 group-hover:text-indigo-600 transition">${escapeHtml(d.id || 'Unknown ID')}</h3>
+                  <h3 class="text-sm font-bold font-mono text-slate-900 group-hover:text-indigo-600 transition break-all">${escapeHtml(d.id || 'Unknown ID')}</h3>
                   <p class="text-xs text-slate-500 truncate">${escapeHtml(d.m || 'Unspecified Merchant')} • ${escapeHtml(d.dt || '')}</p>
                 </div>
               </div>
@@ -3643,9 +2947,6 @@
         .join('');
     }
 
-    /**
-     * Opens modal for a saved receipt and runs live Web Crypto API re-verification
-     */
     async function openVaultReceiptModal(uid) {
       const vault = getVaultReceipts();
       const rec = vault.find((r) => r.uid === uid);
@@ -3653,12 +2954,9 @@
 
       appState.activeModalReceiptId = uid;
       const d = rec.envelope?.d || {};
-      const cur = d.cur || 'USD';
+      const cur = d.c || d.cur || 'USD';
 
-      // Re-run cryptographic verification live against current Public Key
       const liveCheck = await verifyReceiptEnvelope(rec.envelope);
-
-      // Update stored status if changed
       if (rec.lastKnownValid !== liveCheck.valid) {
         rec.lastKnownValid = liveCheck.valid;
         localStorage.setItem(STORAGE_KEYS.VAULT, JSON.stringify(vault));
@@ -3693,15 +2991,15 @@
       document.getElementById('modal-inv-merchant').textContent = d.m || 'Unspecified Merchant';
       document.getElementById('modal-raw-json').textContent = rec.rawJson;
 
-      // Render items
       const tbody = document.getElementById('modal-items-tbody');
       tbody.innerHTML = '';
-      let grandTotal = 0;
-      (Array.isArray(d.items) ? d.items : []).forEach((it) => {
+      let computedTotal = 0;
+      const items = Array.isArray(d.i) ? d.i : (Array.isArray(d.items) ? d.items : []);
+      items.forEach((it) => {
         const qty = Number(it[1]) || 0;
         const price = Number(it[2]) || 0;
         const lineTotal = Math.round(qty * price * 100) / 100;
-        grandTotal += lineTotal;
+        computedTotal += lineTotal;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -3712,20 +3010,24 @@
         `;
         tbody.appendChild(tr);
       });
-      document.getElementById('modal-grand-total').textContent = `${formatNumber(grandTotal)} ${cur}`;
+      const displayTotal = typeof d.t === 'number' ? d.t : computedTotal;
+      document.getElementById('modal-grand-total').textContent = `${formatNumber(displayTotal)} ${cur}`;
 
-      // Render reconstructed QR code
-      const qrLib = await ensureQRCodeLibrary();
-      const modalCanvas = document.getElementById('modal-qr-canvas');
-      await qrLib.toCanvas(modalCanvas, rec.rawJson, {
-        width: 180,
-        margin: 2,
-        errorCorrectionLevel: 'M',
-        color: { dark: '#0f172a', light: '#ffffff' },
-      });
-      const modalImg = document.getElementById('modal-qr-img');
-      if (modalImg) {
-        modalImg.src = modalCanvas.toDataURL('image/png');
+      try {
+        const qrLib = await ensureQRCodeLibrary();
+        const modalCanvas = document.getElementById('modal-qr-canvas');
+        await qrLib.toCanvas(modalCanvas, rec.rawJson, {
+          width: 190,
+          margin: 2,
+          errorCorrectionLevel: 'M',
+          color: { dark: '#0f172a', light: '#ffffff' },
+        });
+        const modalImg = document.getElementById('modal-qr-img');
+        if (modalImg) {
+          modalImg.src = modalCanvas.toDataURL('image/png');
+        }
+      } catch (e) {
+        console.warn('Modal QR render warning:', e);
       }
 
       document.getElementById('modal-delete-btn').onclick = () => deleteVaultReceipt(uid);
@@ -3763,7 +3065,7 @@
     }
 
     // =========================================================================
-    // 6. GENERAL HELPER UTILITIES
+    // 8. UTILITY HELPERS & SAFE BOOTSTRAP
     // =========================================================================
 
     function formatNumber(num) {
@@ -3806,6 +3108,7 @@
 
     function showToast(message, type = 'info') {
       const container = document.getElementById('toast-container');
+      if (!container) return;
       const toast = document.createElement('div');
       const styles = {
         success: 'bg-emerald-900 text-white border-emerald-700',
@@ -3822,13 +3125,16 @@
       }, 3200);
     }
 
-    // =========================================================================
-    // 7. BOOTSTRAP APPLICATION ON LOAD
-    // =========================================================================
     window.addEventListener('DOMContentLoaded', async () => {
-      resetIssueForm();
-      updateVaultBadgeCount();
-      await initializeCryptoKeys();
+      try {
+        resetIssueForm();
+        updateVaultBadgeCount();
+        renderVaultList();
+        await initializeCryptoKeys();
+      } catch (err) {
+        console.error('ReceiptSeal startup error:', err);
+        showToast('Startup notice: ' + err.message, 'error');
+      }
     });
   </script>
 </body>
