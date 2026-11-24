@@ -1,2712 +1,583 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ReceiptSeal — Cryptographic Purchase Receipt QR &amp; RSQ3 Art Card</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-        },
-      },
-    };
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" crossorigin="anonymous"></script>
-  <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    @keyframes scanline {
-      0% { transform: translateY(0%); }
-      50% { transform: translateY(200px); }
-      100% { transform: translateY(0%); }
-    }
-    .scanner-laser {
-      animation: scanline 2.4s ease-in-out infinite;
-    }
-    .touch-img {
-      -webkit-touch-callout: default;
-      user-select: auto;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ECDSA QR Verifier</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f7f5;--card:#fff;--card2:#eef3ef;--text:#14201a;--muted:#5b6b62;--accent:#2f9e63;--accent-text:#fff;--border:#cfdcd3;--ok:#1a8f4f;--okbg:#dff5e8;--bad:#c0392b;--badbg:#fbe4e1;--warn:#a6700a;--warnbg:#fdf0d2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1210;--card:#18211d;--card2:#212c27;--text:#e8f1ec;--muted:#92a49a;--accent:#72c48d;--accent-text:#0b1a12;--border:#2c4a3b;--ok:#72c48d;--okbg:#18372a;--bad:#ff8a7a;--badbg:#3a1d1a;--warn:#f0c15a;--warnbg:#3a2f12}}
+:root[data-theme="dark"]{--bg:#0d1210;--card:#18211d;--card2:#212c27;--text:#e8f1ec;--muted:#92a49a;--accent:#72c48d;--accent-text:#0b1a12;--border:#2c4a3b;--ok:#72c48d;--okbg:#18372a;--bad:#ff8a7a;--badbg:#3a1d1a;--warn:#f0c15a;--warnbg:#3a2f12}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:19px;margin:0 0 2px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.tabs{display:flex;gap:6px;background:var(--card2);padding:5px;border-radius:14px;margin-bottom:14px}
+.tabs button{flex:1;border:0;background:none;color:var(--muted);padding:10px;border-radius:10px;font:600 14px inherit;font-family:inherit;cursor:pointer}
+.tabs button.on{background:var(--accent);color:var(--accent-text)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button.b,label.b{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-text);padding:11px 14px;border-radius:12px;font:600 14px inherit;font-family:inherit;cursor:pointer;flex:1;min-width:120px;text-align:center}
+button.b.o,label.b.o{background:none;color:var(--accent)}
+button.b.d{border-color:var(--bad);color:var(--bad);background:none;flex:0;min-width:0;padding:7px 11px}
+input[type=text],textarea{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:11px;font:13px ui-monospace,Menlo,Consolas,monospace;margin-bottom:8px}
+input[type=text]{font-family:inherit;font-size:15px}
+textarea{min-height:120px;resize:vertical}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.vid{position:relative;border-radius:14px;overflow:hidden;background:#000;display:none;margin-bottom:10px;aspect-ratio:1/1}
+.vid video{width:100%;height:100%;object-fit:cover}
+.vid i{position:absolute;inset:18%;border:3px solid #72c48d;border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.drop{border:2px dashed var(--border);border-radius:14px;padding:16px;text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+.drop.h{border-color:var(--accent);color:var(--accent)}
+.msg{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
+.res{border-radius:16px;padding:16px;margin-bottom:14px;display:none}
+.res.ok{background:var(--okbg);color:var(--ok);border:1px solid var(--ok)}
+.res.bad{background:var(--badbg);color:var(--bad);border:1px solid var(--bad)}
+.res.warn{background:var(--warnbg);color:var(--warn);border:1px solid var(--warn)}
+.res h2{margin:0 0 4px;font-size:20px}
+.res p{margin:0;font-size:13px;color:var(--text)}
+.lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:12px 0 4px}
+pre{margin:0;background:var(--card2);color:var(--text);border-radius:12px;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto}
+.key{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--card2)}
+.key .t{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.key b{word-break:break-word}
+.fp{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--accent);margin-top:2px}
+.key details{margin-top:6px;font-size:12px;color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:12px;font-size:13px}
+.hid{display:none}
+canvas{display:none}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
-
-  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
-
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-            </svg>
-          </div>
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h1 class="text-lg font-bold tracking-tight text-slate-900">ReceiptSeal</h1>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                100% Client-Side • No Expiry
-              </span>
-            </div>
-            <p class="text-xs text-slate-500">ECDSA P-256 Receipt QR &amp; QR-Anchored Mosaic Art-Card System</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2.5 bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
-          <span id="header-key-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-          <div class="flex flex-col min-w-0">
-            <span id="header-key-mode" class="font-semibold text-slate-800 truncate">Full Issuer + Verifier Keypair</span>
-            <span id="header-key-fp" class="font-mono text-[11px] text-slate-500 truncate">FP: Initializing...</span>
-          </div>
-          <button type="button" onclick="switchTab('keys')" class="ml-1 text-indigo-600 hover:text-indigo-800 font-semibold underline underline-offset-2 shrink-0">
-            Keys
-          </button>
-        </div>
-      </div>
-
-      <nav class="flex space-x-1 overflow-x-auto pb-0 -mb-px" aria-label="Tabs">
-        <button type="button" id="tab-btn-issue" onclick="switchTab('issue')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-semibold text-sm flex items-center gap-2 transition-colors border-indigo-600 text-indigo-600">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Issue &amp; Sign Receipt</span>
-        </button>
-
-        <button type="button" id="tab-btn-verify" onclick="switchTab('verify')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>Verify Receipt</span>
-        </button>
-
-        <button type="button" id="tab-btn-keys" onclick="switchTab('keys')" class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-          </svg>
-          <span>Key Management &amp; Vault</span>
-          <span id="vault-count-badge" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-slate-200 text-slate-700 font-semibold">0</span>
-        </button>
-      </nav>
-    </div>
-  </header>
-
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-
-    <section id="view-issue" class="tab-view space-y-6">
-      <div id="no-privkey-alert" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <div>
-            <h3 class="text-sm font-semibold text-amber-900">Verifier-Only Mode Active (No Private Key Loaded)</h3>
-            <p class="text-xs text-amber-800 mt-0.5">Generate a new key pair or import a Private Key JWK in Key Management to sign receipts.</p>
-          </div>
-        </div>
-        <button type="button" onclick="switchTab('keys')" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shrink-0 transition">
-          Open Key Management
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
-            <div>
-              <h2 class="text-base font-bold text-slate-900">Purchase Receipt Details</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Cryptographically signed with ECDSA P-256. No expiration timestamp is embedded.</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="addSampleBulkItems()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition">
-                + Add 3 Sample Items
-              </button>
-              <button type="button" onclick="resetIssueForm()" class="text-xs font-medium text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition">
-                Reset
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label for="issue-inv-id" class="block text-xs font-semibold text-slate-700 mb-1.5">Invoice / Receipt ID *</label>
-              <div class="flex rounded-xl shadow-2xs">
-                <input type="text" id="issue-inv-id" class="block w-full rounded-l-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="INV-2026-849210" />
-                <button type="button" onclick="generateRandomInvoiceId()" title="Generate Random Invoice ID" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 border border-l-0 border-slate-300 rounded-r-xl text-xs font-semibold text-slate-700 transition">
-                  Auto
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label for="issue-date" class="block text-xs font-semibold text-slate-700 mb-1.5">Purchase Date *</label>
-              <input type="date" id="issue-date" class="block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
-            </div>
-
-            <div>
-              <label for="issue-merchant" class="block text-xs font-semibold text-slate-700 mb-1.5">Merchant / Issuer Name</label>
-              <input type="text" id="issue-merchant" class="block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="e.g., Acme Digital Store" />
-            </div>
-
-            <div>
-              <label for="issue-currency" class="block text-xs font-semibold text-slate-700 mb-1.5">Currency *</label>
-              <select id="issue-currency" onchange="recalculateTotals()" class="block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none">
-                <option value="USD">USD ($) — US Dollar</option>
-                <option value="EUR">EUR (€) — Euro</option>
-                <option value="GBP">GBP (£) — British Pound</option>
-                <option value="MMK">MMK (Ks) — Myanmar Kyat</option>
-                <option value="SGD">SGD (S$) — Singapore Dollar</option>
-                <option value="THB">THB (฿) — Thai Baht</option>
-                <option value="JPY">JPY (¥) — Japanese Yen</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="space-y-3 pt-1">
-            <div class="flex items-center justify-between">
-              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Purchased Items</label>
-              <button type="button" onclick="addLineItem()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Product
-              </button>
-            </div>
-
-            <div class="hidden sm:grid sm:grid-cols-12 gap-2 px-2 text-[11px] font-semibold text-slate-500 uppercase">
-              <div class="col-span-5">Product Name</div>
-              <div class="col-span-2 text-right">Qty</div>
-              <div class="col-span-2 text-right">Unit Price</div>
-              <div class="col-span-2 text-right">Line Total</div>
-              <div class="col-span-1"></div>
-            </div>
-
-            <div id="line-items-container" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1"></div>
-          </div>
-
-          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <span class="text-xs font-medium text-slate-500 block">Grand Total</span>
-              <span id="issue-item-count" class="text-xs text-slate-400">0 items</span>
-            </div>
-            <div class="text-right">
-              <span id="issue-grand-total" class="text-2xl font-extrabold text-slate-900 font-mono">0.00 USD</span>
-            </div>
-          </div>
-
-          <div class="space-y-3 pt-1">
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Output Seal Format</label>
-            <div class="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-xl">
-              <button type="button" id="carrier-btn-qr" onclick="setIssueCarrierMode('qr')" class="py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-                </svg>
-                <span>Mode A: High-Clarity QR</span>
-              </button>
-              <button type="button" id="carrier-btn-mosaic" onclick="setIssueCarrierMode('mosaic')" class="py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
-                </svg>
-                <span>Mode B: RSQ3 Art Card</span>
-              </button>
-            </div>
-
-            <div id="mosaic-config-panel" class="hidden space-y-3 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <span class="text-xs font-bold text-indigo-950">RSQ3 QR-Anchored Mosaic Art Card (1360×960)</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  Dual QR Anchors (RS3:TL &amp; RS3:BR) • Survives Screenshots &amp; Chat
-                </span>
-              </div>
-
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                <button type="button" onclick="selectMosaicTheme('emerald')" id="theme-btn-emerald" class="theme-preset-btn py-2 px-2 rounded-xl bg-emerald-950 text-emerald-200 text-[11px] font-semibold border-2 border-indigo-500 transition truncate">
-                  Guilloché Emerald
-                </button>
-                <button type="button" onclick="selectMosaicTheme('indigo')" id="theme-btn-indigo" class="theme-preset-btn py-2 px-2 rounded-xl bg-indigo-950 text-sky-200 text-[11px] font-semibold border border-indigo-400/40 transition truncate">
-                  Holographic Indigo
-                </button>
-                <button type="button" onclick="selectMosaicTheme('gold')" id="theme-btn-gold" class="theme-preset-btn py-2 px-2 rounded-xl bg-stone-900 text-amber-300 text-[11px] font-semibold border border-amber-400/40 transition truncate">
-                  Gold Bullion
-                </button>
-                <button type="button" onclick="selectMosaicTheme('slate')" id="theme-btn-slate" class="theme-preset-btn py-2 px-2 rounded-xl bg-slate-800 text-slate-100 text-[11px] font-semibold border border-slate-500/40 transition truncate">
-                  Minimalist Slate
-                </button>
-              </div>
-
-              <label for="mosaic-cover-input" class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-white hover:bg-indigo-50/40 border border-dashed border-indigo-300 rounded-xl cursor-pointer transition">
-                <div class="min-w-0">
-                  <p id="mosaic-cover-filename" class="text-xs font-semibold text-slate-800 truncate">Theme: Guilloché Emerald Vault (1260×945)</p>
-                  <p id="mosaic-cover-dims" class="text-[11px] text-slate-500">Or upload any custom cover photo to blend under mosaic tiles</p>
-                </div>
-                <span class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold shrink-0">Upload Photo</span>
-                <input id="mosaic-cover-input" type="file" accept="image/*" onchange="handleMosaicCoverUpload(event)" class="hidden" />
-              </label>
-
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-indigo-200/70">
-                <label for="mosaic-strength-select" class="text-xs font-semibold text-indigo-950">Tile Luminance Contrast</label>
-                <select id="mosaic-strength-select" class="rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500">
-                  <option value="56">Balanced (ΔL 56 — Clean Art)</option>
-                  <option value="74" selected>High Resilience (ΔL 74 — Screenshots &amp; Chat)</option>
-                  <option value="90">Maximum (ΔL 90 — Heavy JPEG / Camera)</option>
-                </select>
-              </div>
-
-              <p id="mosaic-capacity-note" class="text-[11px] text-indigo-900 leading-relaxed">
-                <strong>RSQ3 High-Capacity Binary Grid:</strong> Supports up to 400 compressed binary bytes (12–18+ products) anchored by Top-Left &amp; Bottom-Right QR stamps for instant perspective lock.
-              </p>
-            </div>
-          </div>
-
-          <button type="button" id="btn-sign-generate" onclick="handleSignAndGenerate()" class="w-full py-3.5 px-5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-            </svg>
-            <span id="btn-sign-generate-text">Sign &amp; Generate Receipt QR Code</span>
-          </button>
-        </div>
-
-        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 class="text-base font-bold text-slate-900">Cryptographic Receipt Output</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Permanent offline verification • Zero expiration date</p>
-            </div>
-            <span id="seal-byte-badge" class="hidden px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-              0 bytes
-            </span>
-          </div>
-
-          <div id="seal-empty-state" class="py-12 px-4 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-            <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-              </svg>
-            </div>
-            <p id="empty-state-title" class="text-sm font-semibold text-slate-700">No Seal Generated Yet</p>
-            <p id="empty-state-desc" class="text-xs text-slate-500 mt-1 max-w-xs">
-              Add your purchased items on the left and click "Sign &amp; Generate Receipt QR Code".
-            </p>
-          </div>
-
-          <div id="seal-result-container" class="hidden flex flex-col items-center space-y-4">
-            <div class="p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-xs w-full text-center">
-              <canvas id="generated-seal-canvas" class="hidden"></canvas>
-              <img id="generated-seal-img" alt="Generated ReceiptSeal PNG" class="touch-img rounded-xl max-w-full max-h-80 w-auto h-auto mx-auto shadow-2xs" />
-              <p class="text-[11px] text-slate-400 mt-2">
-                iPhone/iPad: Tap <strong>Download / Save PNG</strong> or press &amp; hold the image above to <strong>Save to Photos</strong>
-              </p>
-              <span id="mosaic-active-badge" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                RSQ3 QR-Anchored Mosaic • Screenshot &amp; Chat Compression Proof
-              </span>
-            </div>
-
-            <div class="flex flex-wrap items-center justify-center gap-2 w-full">
-              <button type="button" onclick="downloadGeneratedSeal()" class="flex-1 min-w-[150px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                <span id="btn-download-seal-text">Download / Save PNG</span>
-              </button>
-              <button type="button" onclick="copyGeneratedPayload()" class="flex-1 min-w-[130px] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy JSON
-              </button>
-              <button type="button" onclick="sendGeneratedToVerifier()" class="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
-                <span>Test in Verifier Tab →</span>
-              </button>
-            </div>
-
-            <div class="w-full text-left">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[11px] font-semibold text-slate-500 uppercase">Signed Compact JSON Payload</span>
-                <span class="text-[11px] text-emerald-600 font-semibold">Saved to Vault</span>
-              </div>
-              <pre id="generated-payload-preview" class="w-full p-3 rounded-xl bg-slate-900 text-slate-100 font-mono text-[11px] overflow-x-auto max-h-36 whitespace-pre-wrap break-all leading-relaxed"></pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-verify" class="tab-view hidden space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
-          <div class="border-b border-slate-100 pb-4">
-            <h2 class="text-base font-bold text-slate-900">Scan or Verify Receipt Seal</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Verifies ECDSA P-256 digital signatures offline from Standard QR codes, RSQ3 Art Cards, screenshots, or JSON.</p>
-          </div>
-
-          <div class="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-xl">
-            <button type="button" id="vmode-btn-camera" onclick="setVerifyInputMode('camera')" class="vmode-btn py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5">
-              <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>Camera</span>
-            </button>
-            <button type="button" id="vmode-btn-upload" onclick="setVerifyInputMode('upload')" class="vmode-btn py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span>Image File</span>
-            </button>
-            <button type="button" id="vmode-btn-paste" onclick="setVerifyInputMode('paste')" class="vmode-btn py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Paste JSON</span>
-            </button>
-          </div>
-
-          <div id="verify-panel-camera" class="space-y-3">
-            <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center border border-slate-300">
-              <video id="qr-video" class="w-full h-full object-cover hidden" playsinline muted></video>
-              <canvas id="qr-scan-canvas" class="hidden"></canvas>
-              <canvas id="qr-hud-canvas" class="hidden absolute inset-0 w-full h-full pointer-events-none"></canvas>
-
-              <div id="scanner-overlay" class="hidden absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
-                <div class="w-64 sm:w-72 aspect-[4/3] border-2 border-emerald-400/80 rounded-2xl relative overflow-hidden shadow-[0_0_0_9999px_rgba(15,23,42,0.45)]">
-                  <div class="scanner-laser w-full h-0.5 bg-emerald-400 shadow-[0_0_8px_#34d399]"></div>
-                </div>
-                <span id="scanner-status-pill" class="mt-2.5 px-3 py-1 rounded-full bg-slate-950/85 text-[11px] font-medium text-emerald-300 border border-emerald-500/30">
-                  Align QR Code or RSQ3 Art Card inside frame
-                </span>
-              </div>
-
-              <div id="camera-placeholder" class="text-center p-6 space-y-2">
-                <div class="w-12 h-12 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <p class="text-xs font-medium text-slate-300">Camera scanner is idle</p>
-                <p id="camera-error-msg" class="text-xs text-rose-400 hidden max-w-xs mx-auto"></p>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-              <button type="button" id="btn-start-camera" onclick="startCameraScanner()" class="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Start Camera Scanner
-              </button>
-              <button type="button" id="btn-stop-camera" onclick="stopCameraScanner()" class="hidden flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition">
-                Stop Camera
-              </button>
-              <select id="camera-select" onchange="restartCameraWithSelection()" class="hidden py-2.5 px-3 rounded-xl border border-slate-300 text-xs bg-white max-w-[180px]"></select>
-            </div>
-          </div>
-
-          <div id="verify-panel-upload" class="hidden space-y-3">
-            <label for="qr-file-input" class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-2xl cursor-pointer bg-slate-50 hover:bg-indigo-50/30 transition p-6 text-center">
-              <svg class="w-10 h-10 text-slate-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              <span class="text-sm font-semibold text-slate-700">Select Receipt Image (QR Code, Screenshot, Chat Photo, or RSQ3 Art Card)</span>
-              <span class="text-xs text-slate-500 mt-1">Multi-pass QR + RSQ3 QR-Anchored Perspective Lock decoder</span>
-              <input id="qr-file-input" type="file" accept="image/*" onchange="handleQRImageUpload(event)" class="hidden" />
-            </label>
-          </div>
-
-          <div id="verify-panel-paste" class="hidden space-y-3">
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label for="verify-raw-input" class="text-xs font-semibold text-slate-700">Raw Receipt JSON Payload</label>
-                <button type="button" onclick="simulateTamperInPaste()" class="text-xs font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg transition">
-                  ⚡ Simulate Tampering
-                </button>
-              </div>
-              <textarea id="verify-raw-input" rows="5" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder='{"v":1,"d":{"id":"INV-2026-1234",...},"s":"..."}'></textarea>
-            </div>
-            <button type="button" onclick="verifyRawPayloadString(document.getElementById('verify-raw-input').value, true)" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition">
-              Verify Cryptographic Signature
-            </button>
-          </div>
-
-          <details class="border border-slate-200 rounded-xl bg-slate-50/70">
-            <summary class="px-4 py-3 text-xs font-semibold text-slate-700 cursor-pointer select-none flex items-center justify-between">
-              <span>Verifier Public Key Override (Verify External Merchant Receipts)</span>
-              <span class="text-indigo-600 text-[11px]">Expand</span>
-            </summary>
-            <div class="px-4 pb-4 pt-2 space-y-2 border-t border-slate-200/70">
-              <p class="text-[11px] text-slate-500">Leave blank to use your active Public Key, or paste another merchant's Public Key (JWK or Base64url SPKI).</p>
-              <textarea id="verify-override-pubkey" rows="3" class="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-[11px] bg-white focus:border-indigo-500 outline-none" placeholder="Paste Merchant Public Key (JWK or Base64url SPKI)..."></textarea>
-              <div class="flex justify-end">
-                <button type="button" onclick="document.getElementById('verify-override-pubkey').value=''; showToast('Cleared override key; using active key.', 'info')" class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900">Clear Override</button>
-              </div>
-            </div>
-          </details>
-        </div>
-
-        <div class="lg:col-span-6 space-y-5">
-          <div id="verify-empty-state" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-8 text-center space-y-3">
-            <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-              </svg>
-            </div>
-            <h3 class="text-base font-bold text-slate-900">Ready to Verify</h3>
-            <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-              Scan a QR code or RSQ3 Art Card with your camera, upload an image/screenshot, or paste the raw JSON payload to verify authenticity via <code class="font-mono bg-slate-100 px-1 rounded">crypto.subtle.verify</code>.
-            </p>
-          </div>
-
-          <div id="verify-result-card" class="hidden bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all">
-            <div id="verify-status-banner" class="p-5 flex items-start gap-3.5">
-              <div id="verify-status-icon" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"></div>
-              <div class="flex-1 min-w-0">
-                <h3 id="verify-status-title" class="text-base sm:text-lg font-extrabold tracking-tight"></h3>
-                <p id="verify-status-subtitle" class="text-xs mt-1 leading-relaxed"></p>
-              </div>
-            </div>
-
-            <div id="verify-receipt-details" class="p-5 sm:p-6 border-t border-slate-100 space-y-5">
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/70">
-                <div>
-                  <span class="text-[11px] font-semibold text-slate-400 uppercase block">Invoice ID</span>
-                  <span id="v-inv-id" class="text-sm font-bold font-mono text-slate-900 break-all">—</span>
-                </div>
-                <div>
-                  <span class="text-[11px] font-semibold text-slate-400 uppercase block">Purchase Date</span>
-                  <span id="v-inv-date" class="text-sm font-semibold text-slate-800">—</span>
-                </div>
-                <div class="col-span-2 sm:col-span-1">
-                  <span class="text-[11px] font-semibold text-slate-400 uppercase block">Merchant / Issuer</span>
-                  <span id="v-inv-merchant" class="text-sm font-semibold text-slate-800">—</span>
-                </div>
-              </div>
-
-              <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="min-w-full divide-y divide-slate-200 text-xs">
-                  <thead class="bg-slate-50 text-slate-500 font-semibold uppercase">
-                    <tr>
-                      <th class="px-3.5 py-2.5 text-left">Item</th>
-                      <th class="px-3.5 py-2.5 text-right">Qty</th>
-                      <th class="px-3.5 py-2.5 text-right">Unit Price</th>
-                      <th class="px-3.5 py-2.5 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody id="v-items-tbody" class="divide-y divide-slate-100 bg-white"></tbody>
-                  <tfoot class="bg-slate-50 font-bold text-slate-900">
-                    <tr>
-                      <td colspan="3" class="px-3.5 py-3 text-right uppercase text-[11px] tracking-wider text-slate-500">Grand Total</td>
-                      <td id="v-grand-total" class="px-3.5 py-3 text-right font-mono text-sm">0.00</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                <span>Algorithm: <strong class="text-slate-700">ECDSA P-256 / SHA-256</strong></span>
-                <span>Expiration: <strong class="text-emerald-700">None (Permanent)</strong></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-keys" class="tab-view hidden space-y-6">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">ECDSA P-256 Cryptographic Key Pair</h2>
-            <p class="text-xs text-slate-500 mt-0.5 max-w-2xl">
-              Generated locally via Web Crypto API and stored in <code class="font-mono bg-slate-100 px-1 rounded">localStorage</code> (<code class="font-mono bg-slate-100 px-1 rounded">receiptseal_keys_v1</code>). Export your Public Key to embed in verifiers, or back up your Private Key JWK.
-            </p>
-          </div>
-          <button type="button" onclick="generateAndSaveNewKeyPair(false)" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center gap-2 shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Generate New Key Pair
-          </button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase block">Active Terminal Role</span>
-            <span id="km-mode-label" class="text-sm font-bold text-slate-900 mt-1 block">Issuer + Verifier</span>
-          </div>
-          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase block">Curve &amp; Signature Hash</span>
-            <span class="text-sm font-bold text-slate-900 mt-1 block">NIST P-256 / SHA-256</span>
-          </div>
-          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase block">Public Key SHA-256 Fingerprint</span>
-            <span id="km-fingerprint" class="text-xs font-mono font-semibold text-indigo-700 mt-1 block break-all">—</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="border border-slate-200 rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-1">Safe to Distribute</span>
-                <h3 class="text-sm font-bold text-slate-900">Public Verification Key</h3>
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="text-[11px] font-semibold text-slate-500 uppercase">Compact Base64url SPKI</label>
-                <button type="button" onclick="copyTextById('km-pub-spki', 'Compact Public Key')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Copy</button>
-              </div>
-              <textarea id="km-pub-spki" readonly rows="2" class="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs text-slate-800 outline-none"></textarea>
-            </div>
-
-            <div class="space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="text-[11px] font-semibold text-slate-500 uppercase">Standard JWK Format</label>
-                <button type="button" onclick="copyTextById('km-pub-jwk', 'Public Key JWK')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Copy</button>
-              </div>
-              <textarea id="km-pub-jwk" readonly rows="4" class="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-[11px] text-slate-800 outline-none"></textarea>
-            </div>
-          </div>
-
-          <div class="border border-slate-200 rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 mb-1">Keep Confidential</span>
-                <h3 class="text-sm font-bold text-slate-900">Private Signing Key (JWK)</h3>
-              </div>
-              <button type="button" id="btn-toggle-privkey" onclick="togglePrivateKeyVisibility()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition">
-                Reveal Key
-              </button>
-            </div>
-
-            <p class="text-xs text-slate-500">
-              Back up your Private Key JWK to issue authentic receipts on another device. Anyone possessing this key can sign receipts under your identity.
-            </p>
-
-            <div class="space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="text-[11px] font-semibold text-slate-500 uppercase">Private Key JWK</label>
-                <button type="button" onclick="copyPrivateKeyJWK()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Copy Private JWK</button>
-              </div>
-              <textarea id="km-priv-jwk" readonly rows="5" class="w-full rounded-xl border border-slate-200 bg-slate-900 text-emerald-400 p-3 font-mono text-[11px] outline-none" placeholder="••••••••••••••••••••••••••••••••••••••••"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="border-t border-slate-200 pt-5 space-y-3">
-          <h3 class="text-sm font-bold text-slate-900">Import Key (Private JWK or Verifier Public Key)</h3>
-          <textarea id="km-import-input" rows="3" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder='Paste Private JWK JSON, Public JWK JSON, or Compact Base64url SPKI Public Key...'></textarea>
-          <button type="button" onclick="handleImportKey()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition">
-            Import &amp; Activate Key
-          </button>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Saved Offline Receipt Vault (<code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">receiptseal_vault_v1</code>)</h2>
-            <p class="text-xs text-slate-500 mt-0.5">All generated and verified receipts persisted locally. Click any card to inspect and re-verify live via Web Crypto API.</p>
-          </div>
-          <button type="button" onclick="clearAllVaultReceipts()" class="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold transition shrink-0">
-            Clear All History
-          </button>
-        </div>
-
-        <div id="vault-empty-state" class="py-10 text-center space-y-2">
-          <p class="text-sm font-semibold text-slate-700">No Saved Receipts Yet</p>
-          <p class="text-xs text-slate-500">Generated and verified receipts automatically appear here for offline access.</p>
-        </div>
-
-        <div id="vault-list-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <div id="vault-modal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-2xl w-full overflow-hidden my-8">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-        <div>
-          <h3 class="text-base font-bold text-slate-900">Stored Receipt Inspection</h3>
-          <p class="text-xs text-slate-500">Live cryptographic re-verification via <code class="font-mono">crypto.subtle.verify</code></p>
-        </div>
-        <button type="button" onclick="closeVaultModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-        <div id="modal-verify-banner" class="p-4 rounded-xl border flex items-center gap-3">
-          <div id="modal-verify-icon" class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"></div>
-          <div>
-            <h4 id="modal-verify-title" class="text-sm font-extrabold"></h4>
-            <p id="modal-verify-desc" class="text-xs mt-0.5"></p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-          <div class="sm:col-span-5 flex flex-col items-center p-3 bg-slate-50 border border-slate-200 rounded-xl">
-            <canvas id="modal-qr-canvas" class="hidden"></canvas>
-            <img id="modal-qr-img" alt="Saved Receipt QR Code" class="touch-img rounded-lg max-w-full h-auto" />
-            <button type="button" onclick="downloadModalQR()" class="mt-2.5 w-full py-2 px-3 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 transition">
-              Save / Share QR PNG
-            </button>
-          </div>
-
-          <div class="sm:col-span-7 space-y-3">
-            <div class="grid grid-cols-2 gap-3 text-xs">
-              <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span class="text-slate-400 font-semibold uppercase text-[10px] block">Invoice ID</span>
-                <span id="modal-inv-id" class="font-mono font-bold text-slate-900 text-sm break-all"></span>
-              </div>
-              <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span class="text-slate-400 font-semibold uppercase text-[10px] block">Date</span>
-                <span id="modal-inv-date" class="font-semibold text-slate-800 text-sm"></span>
-              </div>
-              <div class="col-span-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span class="text-slate-400 font-semibold uppercase text-[10px] block">Merchant</span>
-                <span id="modal-inv-merchant" class="font-semibold text-slate-800 text-sm"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto border border-slate-200 rounded-xl">
-          <table class="min-w-full divide-y divide-slate-200 text-xs">
-            <thead class="bg-slate-50 text-slate-500 font-semibold uppercase">
-              <tr>
-                <th class="px-3.5 py-2 text-left">Item</th>
-                <th class="px-3.5 py-2 text-right">Qty</th>
-                <th class="px-3.5 py-2 text-right">Unit Price</th>
-                <th class="px-3.5 py-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody id="modal-items-tbody" class="divide-y divide-slate-100 bg-white"></tbody>
-            <tfoot class="bg-slate-50 font-bold text-slate-900">
-              <tr>
-                <td colspan="3" class="px-3.5 py-2.5 text-right uppercase text-[11px] text-slate-500">Grand Total</td>
-                <td id="modal-grand-total" class="px-3.5 py-2.5 text-right font-mono text-sm"></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <div>
-          <span class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Signed Compact JSON Payload</span>
-          <pre id="modal-raw-json" class="p-3 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap break-all max-h-28"></pre>
-        </div>
-      </div>
-
-      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-        <button type="button" id="modal-delete-btn" class="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-100 text-xs font-semibold transition">
-          Delete Receipt
-        </button>
-        <button type="button" onclick="closeVaultModal()" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div id="ios-save-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden my-6">
-      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-        <div>
-          <h3 class="text-sm font-bold text-slate-900">Save Image on iOS / Mobile</h3>
-          <p id="ios-save-filename" class="text-[11px] font-mono text-slate-500 mt-0.5">ReceiptSeal.png</p>
-        </div>
-        <button type="button" onclick="closeIosSaveModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="p-5 space-y-4 text-center">
-        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-left text-xs text-indigo-950 space-y-1">
-          <p class="font-bold">How to save lossless PNG on iPhone / iPad:</p>
-          <p>1. <strong>Press and hold</strong> the image below for 1 second.</p>
-          <p>2. Tap <strong>"Save to Photos"</strong> or <strong>"Share → Save to Files"</strong>.</p>
-        </div>
-
-        <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl inline-block max-w-full">
-          <img id="ios-save-preview-img" alt="Press and hold to save PNG" class="touch-img rounded-lg max-h-72 w-auto h-auto mx-auto shadow-xs" />
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-2 pt-1">
-          <button type="button" id="ios-open-tab-btn" class="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition">
-            Open Image in New Tab
-          </button>
-          <button type="button" onclick="closeIosSaveModal()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition">
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    'use strict';
-
-    const STORAGE_KEYS = {
-      KEYPAIR: 'receiptseal_keys_v1',
-      VAULT: 'receiptseal_vault_v1',
-    };
-
-    const RSQ3_CFG = {
-      WIDTH: 1360,
-      HEIGHT: 960,
-      COLS: 68,
-      ROWS: 48,
-      MARGIN_X: 0,
-      MARGIN_Y: 0,
-      ANCHOR_TILES: 6,
-      MAX_PACKET_BYTES: 400,
-    };
-
-    const appState = {
-      privateKey: null,
-      publicKey: null,
-      privateJwk: null,
-      publicJwk: null,
-      publicSpkiB64u: '',
-      keyFingerprint: '',
-      privateKeyRevealed: false,
-      issueCarrierMode: 'qr',
-      mosaicTheme: 'emerald',
-      mosaicCoverImage: null,
-      lastGeneratedCarrier: 'qr',
-      lastGeneratedPayload: '',
-      lastGeneratedInvId: '',
-      cameraStream: null,
-      cameraAnimFrame: null,
-      activeModalReceiptId: null,
-    };
-
-    function switchTab(tabName) {
-      if (tabName !== 'verify' && appState.cameraStream) {
-        stopCameraScanner();
-      }
-
-      document.querySelectorAll('.tab-view').forEach((el) => el.classList.add('hidden'));
-      const activeView = document.getElementById('view-' + tabName);
-      if (activeView) activeView.classList.remove('hidden');
-
-      document.querySelectorAll('.tab-btn').forEach((btn) => {
-        btn.classList.remove('border-indigo-600', 'text-indigo-600', 'font-semibold');
-        btn.classList.add('border-transparent', 'text-slate-600', 'font-medium');
-      });
-      const activeBtn = document.getElementById('tab-btn-' + tabName);
-      if (activeBtn) {
-        activeBtn.classList.remove('border-transparent', 'text-slate-600', 'font-medium');
-        activeBtn.classList.add('border-indigo-600', 'text-indigo-600', 'font-semibold');
-      }
-
-      if (tabName === 'keys') {
-        renderVaultList();
-      }
-    }
-
-    function ensureQRCodeLibrary() {
-      if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
-        return Promise.resolve(window.QRCode);
-      }
-      const cdnUrls = [
-        'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js',
-        'https://unpkg.com/qrcode@1.5.1/build/qrcode.min.js',
-      ];
-      return new Promise((resolve, reject) => {
-        let idx = 0;
-        const tryNext = () => {
-          if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
-            return resolve(window.QRCode);
-          }
-          if (idx >= cdnUrls.length) {
-            return reject(new Error('QRCode library failed to load from CDNs.'));
-          }
-          const script = document.createElement('script');
-          script.src = cdnUrls[idx++];
-          script.onload = () => {
-            if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
-              resolve(window.QRCode);
-            } else {
-              tryNext();
-            }
-          };
-          script.onerror = tryNext;
-          document.head.appendChild(script);
-        };
-        tryNext();
-      });
-    }
-
-    function arrayBufferToBase64Url(buffer) {
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-
-    function base64UrlToArrayBuffer(b64u) {
-      let b64 = b64u.replace(/-/g, '+').replace(/_/g, '/');
-      while (b64.length % 4 !== 0) b64 += '=';
-      const binary = atob(b64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return bytes.buffer;
-    }
-
-    function canonicalize(value) {
-      if (value === null || typeof value !== 'object') {
-        return JSON.stringify(value);
-      }
-      if (Array.isArray(value)) {
-        return '[' + value.map((item) => canonicalize(item)).join(',') + ']';
-      }
-      const keys = Object.keys(value).sort();
-      return (
-        '{' +
-        keys
-          .filter((k) => value[k] !== undefined)
-          .map((k) => JSON.stringify(k) + ':' + canonicalize(value[k]))
-          .join(',') +
-        '}'
-      );
-    }
-
-    async function computePublicKeyFingerprint(spkiBuffer) {
-      const hash = await crypto.subtle.digest('SHA-256', spkiBuffer);
-      const bytes = Array.from(new Uint8Array(hash).slice(0, 8));
-      return bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(':');
-    }
-
-    async function initializeCryptoKeys() {
-      try {
-        const storedRaw = localStorage.getItem(STORAGE_KEYS.KEYPAIR);
-        if (storedRaw) {
-          const parsed = JSON.parse(storedRaw);
-          if (parsed && parsed.publicJwk) {
-            await activateKeyMaterial(parsed.privateJwk || null, parsed.publicJwk, false);
-            return;
+<body>
+<main>
+<h1>ECDSA P-256 QR Verifier</h1>
+<p class="sub">Offline signature check · keys stay on this device</p>
+
+<div class="tabs">
+<button class="on" data-tab="scan">Scan</button>
+<button data-tab="keys">Public Keys <span id="kc">(0)</span></button>
+</div>
+
+<section id="tab-scan">
+<div class="card">
+<div class="vid" id="vid"><video id="video" playsinline muted></video><i></i></div>
+<div class="row">
+<button class="b" id="camBtn">Start Camera</button>
+<label class="b o" for="imgIn">Upload Image</label>
+<input type="file" id="imgIn" accept="image/*">
+</div>
+<label class="drop" id="drop" for="imgIn" style="display:block;cursor:pointer">Tap to choose, drop, or paste a QR image here</label>
+<div class="msg" id="scanMsg"></div>
+<details style="margin-top:8px">
+<summary style="cursor:pointer;color:var(--muted);font-size:13px">Verify pasted QR text</summary>
+<textarea id="manual" placeholder="Paste QR text content" style="margin-top:8px"></textarea>
+<button class="b o" id="manualBtn" style="width:100%">Verify Text</button>
+</details>
+</div>
+
+<div class="res" id="res">
+<h2 id="resTitle"></h2>
+<p id="resSub"></p>
+</div>
+
+<div class="card hid" id="detail">
+<div class="lbl" style="margin-top:0">Decoded content</div>
+<pre id="content"></pre>
+<div class="lbl">Matched key</div>
+<pre id="matched"></pre>
+<div class="lbl">Raw QR text</div>
+<pre id="raw"></pre>
+</div>
+</section>
+
+<section id="tab-keys" class="hid">
+<div class="card">
+<div class="lbl" style="margin-top:0">Add public key</div>
+<input type="text" id="kname" placeholder="Key name (e.g. Shop A issuer)">
+<textarea id="kpem" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea>
+<div class="row">
+<button class="b" id="addKey">Save Key</button>
+<label class="b o" for="pemFile">Load .pem File</label>
+<input type="file" id="pemFile" accept=".pem,.txt,.pub,.key,text/plain">
+</div>
+<div class="msg" id="keyMsg"></div>
+</div>
+
+<div class="card">
+<div class="lbl" style="margin-top:0">Stored keys</div>
+<div id="keyList"></div>
+</div>
+
+<div class="card">
+<div class="lbl" style="margin-top:0">Export / Import all keys</div>
+<textarea id="exp" placeholder="Exported keys JSON appears here. Paste a backup here to import."></textarea>
+<div class="row">
+<button class="b" id="expBtn">Export All</button>
+<button class="b o" id="copyBtn">Copy</button>
+<button class="b o" id="impBtn">Import From Text</button>
+<label class="b o" for="jsonFile">Import File</label>
+<input type="file" id="jsonFile" accept=".json,application/json,text/plain">
+</div>
+<div class="msg" id="expMsg"></div>
+</div>
+</section>
+</main>
+<canvas id="cv"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const enc=new TextEncoder();
+const STORE='ecdsa_pub_keys_v1';
+let mem=[];
+let keys=loadKeys();
+const cache=new Map();
+let stream=null;
+
+function loadKeys(){
+  try{const v=localStorage.getItem(STORE);if(v){const a=JSON.parse(v);if(Array.isArray(a))return a}}catch(e){}
+  return mem.slice();
+}
+function saveKeys(){
+  mem=keys.slice();
+  try{localStorage.setItem(STORE,JSON.stringify(keys))}catch(e){}
+}
+
+function hex(b){return Array.from(b,x=>x.toString(16).padStart(2,'0')).join('').toUpperCase()}
+function strictB64(s){
+  if(typeof s!=='string')return null;
+  s=s.replace(/\s+/g,'');
+  if(s.length<4||!/^[A-Za-z0-9+/_-]+={0,2}$/.test(s))return null;
+  s=s.replace(/-/g,'+').replace(/_/g,'/').replace(/=+$/,'');
+  if(s.length%4===1)return null;
+  s+='='.repeat((4-s.length%4)%4);
+  try{const bin=atob(s);const out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}catch(e){return null}
+}
+function utf8(b){
+  try{const t=new TextDecoder('utf-8',{fatal:true}).decode(b);return /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(t)?null:t}catch(e){return null}
+}
+function hexBytes(s){
+  s=s.trim();
+  if(s.length<128||s.length%2||!/^[0-9a-fA-F]+$/.test(s))return null;
+  const o=new Uint8Array(s.length/2);
+  for(let i=0;i<o.length;i++)o[i]=parseInt(s.substr(i*2,2),16);
+  return o;
+}
+function derToRaw(b){
+  if(b.length<8||b.length>80||b[0]!==0x30)return null;
+  let i=2;
+  if(b[1]&0x80)i=2+(b[1]&0x7f);
+  if(b[i]!==2)return null;
+  const rl=b[i+1];let r=b.slice(i+2,i+2+rl);i+=2+rl;
+  if(b[i]!==2)return null;
+  const sl=b[i+1];let s=b.slice(i+2,i+2+sl);
+  while(r.length>32&&r[0]===0)r=r.slice(1);
+  while(s.length>32&&s[0]===0)s=s.slice(1);
+  if(r.length>32||s.length>32||!r.length||!s.length)return null;
+  const o=new Uint8Array(64);
+  o.set(r,32-r.length);o.set(s,64-s.length);
+  return o;
+}
+function decodeSig(v){
+  if(typeof v!=='string')return null;
+  const b=hexBytes(v)||strictB64(v);
+  if(!b)return null;
+  if(b.length===64)return b;
+  return derToRaw(b);
+}
+function pretty(s){
+  let t=s;
+  const b=strictB64(s);
+  if(b&&s.replace(/\s+/g,'').length>=16){const d=utf8(b);if(d!==null)t=d}
+  try{const j=JSON.parse(t);if(j&&typeof j==='object')return JSON.stringify(j,null,2)}catch(e){}
+  return t;
+}
+function msgsFor(s){
+  const a=[enc.encode(s)];
+  const b=strictB64(s);
+  if(b&&s.length>=8)a.push(b);
+  return a;
+}
+function sortObj(o){
+  if(Array.isArray(o))return o.map(sortObj);
+  if(o&&typeof o==='object'){const r={};Object.keys(o).sort().forEach(k=>r[k]=sortObj(o[k]));return r}
+  return o;
+}
+const SIGK=['sig','signature','s','sign','sg'];
+const PAYK=['data','payload','p','d','msg','message','content'];
+
+function parse(text,depth){
+  const out=[];
+  const t=text.trim();
+  try{
+    const obj=JSON.parse(t);
+    if(obj&&typeof obj==='object'&&!Array.isArray(obj)){
+      const sk=SIGK.find(k=>k in obj);
+      const sig=sk?decodeSig(obj[sk]):null;
+      if(sig){
+        const pk=PAYK.find(k=>k in obj);
+        if(pk){
+          const pv=obj[pk];
+          if(typeof pv==='string'){
+            out.push({sig,msgs:msgsFor(pv),content:pretty(pv)});
+          }else{
+            out.push({sig,msgs:[enc.encode(JSON.stringify(pv)),enc.encode(JSON.stringify(sortObj(pv)))],content:JSON.stringify(pv,null,2)});
           }
         }
-      } catch (e) {
-        console.warn('Stored keypair unreadable, regenerating...', e);
-      }
-      await generateAndSaveNewKeyPair(true);
-    }
-
-    async function generateAndSaveNewKeyPair(silent = false) {
-      try {
-        const keyPair = await crypto.subtle.generateKey(
-          { name: 'ECDSA', namedCurve: 'P-256' },
-          true,
-          ['sign', 'verify']
-        );
-        const privateJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
-        const publicJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
-        await activateKeyMaterial(privateJwk, publicJwk, true);
-        if (!silent) {
-          showToast('Generated new ECDSA P-256 key pair!', 'success');
-        }
-      } catch (err) {
-        console.error('Key generation failed:', err);
-        showToast('Failed to generate key pair: ' + err.message, 'error');
+        const rest={...obj};delete rest[sk];
+        out.push({sig,msgs:[enc.encode(JSON.stringify(rest)),enc.encode(JSON.stringify(sortObj(rest)))],content:JSON.stringify(rest,null,2)});
       }
     }
-
-    async function activateKeyMaterial(privateJwk, publicJwk, persist = true) {
-      const publicKey = await crypto.subtle.importKey(
-        'jwk',
-        publicJwk,
-        { name: 'ECDSA', namedCurve: 'P-256' },
-        true,
-        ['verify']
-      );
-
-      let privateKey = null;
-      if (privateJwk && privateJwk.d) {
-        privateKey = await crypto.subtle.importKey(
-          'jwk',
-          privateJwk,
-          { name: 'ECDSA', namedCurve: 'P-256' },
-          true,
-          ['sign']
-        );
-      }
-
-      const spkiBuffer = await crypto.subtle.exportKey('spki', publicKey);
-      const spkiB64u = arrayBufferToBase64Url(spkiBuffer);
-      const fingerprint = await computePublicKeyFingerprint(spkiBuffer);
-
-      appState.privateKey = privateKey;
-      appState.publicKey = publicKey;
-      appState.privateJwk = privateKey ? privateJwk : null;
-      appState.publicJwk = publicJwk;
-      appState.publicSpkiB64u = spkiB64u;
-      appState.keyFingerprint = fingerprint;
-
-      if (persist) {
-        localStorage.setItem(
-          STORAGE_KEYS.KEYPAIR,
-          JSON.stringify({
-            privateJwk: appState.privateJwk,
-            publicJwk: appState.publicJwk,
-          })
-        );
-      }
-
-      updateKeyUIState();
+  }catch(e){}
+  for(const d of ['.','|','~','\n',':',',',';']){
+    const parts=t.split(d);
+    if(parts.length<2)continue;
+    const sig=decodeSig(parts[parts.length-1]);
+    if(!sig)continue;
+    const body=parts.slice(0,-1);
+    const joined=body.join(d);
+    let content=pretty(joined);
+    if(d==='.'&&parts.length===3)content=pretty(parts[1]);
+    out.push({sig,msgs:msgsFor(joined),content});
+  }
+  const mt=t.match(/[A-Za-z0-9+\/_=-]{86,200}$|[0-9a-fA-F]{128,}$/);
+  if(mt){
+    const sg=decodeSig(mt[0]);
+    if(sg){
+      const head=t.slice(0,mt.index);
+      const trimmed=head.replace(/[\s.|~:,;]+$/,'');
+      out.push({sig:sg,msgs:[...msgsFor(trimmed),enc.encode(head)],content:pretty(trimmed)});
     }
-
-    function updateKeyUIState() {
-      const hasPrivate = Boolean(appState.privateKey);
-      const dot = document.getElementById('header-key-dot');
-      const modeText = document.getElementById('header-key-mode');
-      const fpText = document.getElementById('header-key-fp');
-      const noPrivAlert = document.getElementById('no-privkey-alert');
-      const signBtn = document.getElementById('btn-sign-generate');
-
-      if (hasPrivate) {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0';
-        modeText.textContent = 'Full Issuer + Verifier Keypair';
-        noPrivAlert.classList.add('hidden');
-        signBtn.disabled = false;
-        signBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-      } else {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0';
-        modeText.textContent = 'Verifier-Only Mode (Public Key)';
-        noPrivAlert.classList.remove('hidden');
-        signBtn.disabled = true;
-        signBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      }
-
-      fpText.textContent = 'FP: ' + (appState.keyFingerprint || '—');
-      document.getElementById('km-mode-label').textContent = hasPrivate
-        ? 'Issuer + Verifier (Full Keypair)'
-        : 'Verifier-Only (Public Key Only)';
-      document.getElementById('km-fingerprint').textContent = appState.keyFingerprint || '—';
-      document.getElementById('km-pub-spki').value = appState.publicSpkiB64u || '';
-      document.getElementById('km-pub-jwk').value = appState.publicJwk
-        ? JSON.stringify(appState.publicJwk, null, 2)
-        : '';
-
-      const privBox = document.getElementById('km-priv-jwk');
-      const toggleBtn = document.getElementById('btn-toggle-privkey');
-      if (!hasPrivate) {
-        privBox.value = '';
-        privBox.placeholder = 'No Private Key loaded (Verifier-Only mode).';
-        toggleBtn.classList.add('hidden');
-      } else {
-        toggleBtn.classList.remove('hidden');
-        if (appState.privateKeyRevealed) {
-          privBox.value = JSON.stringify(appState.privateJwk, null, 2);
-          toggleBtn.textContent = 'Hide Key';
-        } else {
-          privBox.value = '';
-          privBox.placeholder = '•••••••••••••••••••••••••••••••••••••••• (Click "Reveal Key" to view)';
-          toggleBtn.textContent = 'Reveal Key';
+  }
+  const ja=t.indexOf('{'),jz=t.lastIndexOf('}');
+  if(depth<1&&ja>=0&&jz>ja&&(ja>0||jz<t.length-1))out.push(...parse(t.slice(ja,jz+1),depth+1));
+  if(depth<1){
+    const b=strictB64(t);
+    if(b&&t.length>=16){
+      const d=utf8(b);
+      if(d!==null)out.push(...parse(d,depth+1));
+      if(b.length>64){
+        out.push({sig:b.slice(-64),msgs:[b.slice(0,-64)],content:utf8(b.slice(0,-64))??('[binary '+(b.length-64)+' bytes]')});
+        const der=derToRaw(b.slice(-72))||derToRaw(b.slice(-71))||derToRaw(b.slice(-70));
+        if(der){
+          for(const n of [72,71,70]){const r=derToRaw(b.slice(-n));if(r&&b[b.length-n]===0x30){out.push({sig:r,msgs:[b.slice(0,-n)],content:utf8(b.slice(0,-n))??'[binary]'});break}}
         }
       }
     }
+  }
+  return out;
+}
 
-    function togglePrivateKeyVisibility() {
-      appState.privateKeyRevealed = !appState.privateKeyRevealed;
-      updateKeyUIState();
+function pemToDer(pem){
+  const body=pem.replace(/-----[^-]+-----/g,'').replace(/\s+/g,'');
+  return strictB64(body);
+}
+async function importPub(der){
+  if(der.length===65&&der[0]===4)return crypto.subtle.importKey('raw',der,{name:'ECDSA',namedCurve:'P-256'},true,['verify']);
+  return crypto.subtle.importKey('spki',der,{name:'ECDSA',namedCurve:'P-256'},true,['verify']);
+}
+async function fingerprint(der){
+  const h=new Uint8Array(await crypto.subtle.digest('SHA-256',der));
+  return Array.from(h.slice(0,8),x=>x.toString(16).padStart(2,'0').toUpperCase()).join(':');
+}
+async function keyObj(k){
+  if(cache.has(k.id))return cache.get(k.id);
+  const der=pemToDer(k.pem);
+  const ck=await importPub(der);
+  cache.set(k.id,ck);
+  return ck;
+}
+function toPem(der){
+  let s='';for(const x of der)s+=String.fromCharCode(x);
+  const b=btoa(s).match(/.{1,64}/g).join('\n');
+  return '-----BEGIN PUBLIC KEY-----\n'+b+'\n-----END PUBLIC KEY-----';
+}
+
+async function addKeyFrom(name,pem){
+  const der0=pemToDer(pem);
+  if(!der0)throw new Error('Could not read key. Paste a PEM or Base64 public key.');
+  let ck;
+  try{ck=await importPub(der0)}catch(e){throw new Error('Not a valid ECDSA P-256 public key.')}
+  let spki=der0;
+  if(der0.length===65){spki=new Uint8Array(await crypto.subtle.exportKey('spki',ck))}
+  const fp=await fingerprint(spki);
+  const pemNorm=toPem(spki);
+  if(keys.some(k=>k.pem===pemNorm))throw new Error('This key is already stored.');
+  const k={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name:name||('Key '+(keys.length+1)),pem:pemNorm,fp,added:new Date().toISOString()};
+  keys.push(k);cache.set(k.id,ck);saveKeys();
+  return k;
+}
+
+function renderKeys(){
+  $('kc').textContent='('+keys.length+')';
+  const box=$('keyList');box.textContent='';
+  if(!keys.length){const e=document.createElement('div');e.className='empty';e.textContent='No public keys stored yet.';box.appendChild(e);return}
+  keys.forEach(k=>{
+    const d=document.createElement('div');d.className='key';
+    const t=document.createElement('div');t.className='t';
+    const b=document.createElement('b');b.textContent=k.name;
+    const x=document.createElement('button');x.className='b d';x.textContent='Delete';
+    x.onclick=()=>{if(confirm('Delete "'+k.name+'"?')){keys=keys.filter(z=>z.id!==k.id);cache.delete(k.id);saveKeys();renderKeys()}};
+    t.append(b,x);
+    const f=document.createElement('div');f.className='fp';f.textContent=k.fp;
+    const det=document.createElement('details');
+    const sm=document.createElement('summary');sm.textContent='Show PEM';sm.style.cursor='pointer';
+    const pr=document.createElement('pre');pr.textContent=k.pem;
+    det.append(sm,pr);
+    d.append(t,f,det);box.appendChild(d);
+  });
+}
+
+const B45='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+function b45(s){
+  const o=[];
+  for(let i=0;i<s.length;i+=3){
+    const c=s.slice(i,i+3).split('').map(x=>B45.indexOf(x));
+    if(c.some(x=>x<0))return null;
+    if(c.length===3){const v=c[0]+c[1]*45+c[2]*2025;if(v>65535)return null;o.push(v>>8,v&255)}
+    else if(c.length===2){const v=c[0]+c[1]*45;if(v>255)return null;o.push(v)}
+    else return null;
+  }
+  return new Uint8Array(o);
+}
+async function inflateRaw(u){
+  const ds=new DecompressionStream('deflate-raw');
+  const w=ds.writable.getWriter();w.write(u);w.close();
+  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+}
+function readSV(d){
+  const dec=x=>Array.from(x,c=>c>=0x80?String.fromCharCode(0x1000+c-0x80):String.fromCharCode(c)).join('');
+  const out=[];const rest=[];let i=0;
+  while(i<d.length){
+    const n=d[i];
+    if(n>=1&&n<=80&&i+1+n<=d.length){
+      const s=d.slice(i+1,i+1+n);
+      if(s.every(c=>c>=0x20)){out.push(dec(s));i+=1+n;continue}
     }
-
-    function copyPrivateKeyJWK() {
-      if (!appState.privateJwk) {
-        showToast('No Private Key loaded to copy.', 'error');
-        return;
-      }
-      copyRawStringToClipboard(JSON.stringify(appState.privateJwk), 'Private Signing Key JWK');
-    }
-
-    async function parsePublicKeyFromString(rawStr) {
-      const cleaned = rawStr.trim();
-      if (!cleaned) throw new Error('Key input is empty.');
-      if (cleaned.startsWith('{')) {
-        const jwk = JSON.parse(cleaned);
-        if (jwk.kty !== 'EC' || jwk.crv !== 'P-256') {
-          throw new Error('JWK must be an EC P-256 key.');
-        }
-        const pubJwk = { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y, ext: true };
-        return await crypto.subtle.importKey(
-          'jwk',
-          pubJwk,
-          { name: 'ECDSA', namedCurve: 'P-256' },
-          true,
-          ['verify']
-        );
-      } else {
-        const spkiBuf = base64UrlToArrayBuffer(cleaned);
-        return await crypto.subtle.importKey(
-          'spki',
-          spkiBuf,
-          { name: 'ECDSA', namedCurve: 'P-256' },
-          true,
-          ['verify']
-        );
-      }
-    }
-
-    async function handleImportKey() {
-      const raw = document.getElementById('km-import-input').value.trim();
-      if (!raw) {
-        showToast('Please paste a JWK or Compact Public Key first.', 'error');
-        return;
-      }
-
-      try {
-        if (raw.startsWith('{')) {
-          const jwk = JSON.parse(raw);
-          if (jwk.kty !== 'EC' || jwk.crv !== 'P-256' || !jwk.x || !jwk.y) {
-            throw new Error('Invalid ECDSA P-256 JWK structure.');
-          }
-          const publicJwk = { kty: 'EC', crv: 'P-256', x: jwk.x, y: jwk.y, ext: true };
-          const privateJwk = jwk.d ? { ...publicJwk, d: jwk.d } : null;
-          await activateKeyMaterial(privateJwk, publicJwk, true);
-          document.getElementById('km-import-input').value = '';
-          showToast(
-            privateJwk
-              ? 'Imported Private + Public Keypair (Issuer & Verifier enabled)!'
-              : 'Imported Public Key (Verifier-Only mode enabled)!',
-            'success'
-          );
-        } else {
-          const importedPub = await parsePublicKeyFromString(raw);
-          const publicJwk = await crypto.subtle.exportKey('jwk', importedPub);
-          await activateKeyMaterial(null, publicJwk, true);
-          document.getElementById('km-import-input').value = '';
-          showToast('Imported Public Key (Verifier-Only mode enabled)!', 'success');
-        }
-      } catch (err) {
-        console.error('Key import error:', err);
-        showToast('Key import failed: ' + err.message, 'error');
-      }
-    }
-
-    async function signReceiptData(receiptData) {
-      if (!appState.privateKey) {
-        throw new Error('Private signing key is not available.');
-      }
-      const canonicalPayload = canonicalize(receiptData);
-      const dataBytes = new TextEncoder().encode(canonicalPayload);
-      const signatureBuffer = await crypto.subtle.sign(
-        { name: 'ECDSA', hash: { name: 'SHA-256' } },
-        appState.privateKey,
-        dataBytes
-      );
-      return {
-        v: 1,
-        d: receiptData,
-        s: arrayBufferToBase64Url(signatureBuffer),
-      };
-    }
-
-    async function verifyReceiptEnvelope(envelope, customPublicKey = null) {
-      const verifyKey = customPublicKey || appState.publicKey;
-      if (!verifyKey) {
-        return { valid: false, reason: 'No Public Key loaded to perform verification.' };
-      }
-      if (!envelope || typeof envelope !== 'object' || !envelope.d || typeof envelope.s !== 'string') {
-        return { valid: false, reason: 'Malformed receipt payload structure (missing data or signature).' };
-      }
-      try {
-        const canonicalPayload = canonicalize(envelope.d);
-        const dataBytes = new TextEncoder().encode(canonicalPayload);
-        const sigBytes = base64UrlToArrayBuffer(envelope.s);
-        const isAuthentic = await crypto.subtle.verify(
-          { name: 'ECDSA', hash: { name: 'SHA-256' } },
-          verifyKey,
-          sigBytes,
-          dataBytes
-        );
-        if (isAuthentic) {
-          return {
-            valid: true,
-            reason: 'ECDSA P-256 signature matches payload and active Public Key.',
-          };
-        } else {
-          return {
-            valid: false,
-            reason: 'Cryptographic signature mismatch! Receipt data was modified or signed by another key.',
-          };
-        }
-      } catch (err) {
-        return {
-          valid: false,
-          reason: 'Signature verification error: ' + err.message,
-        };
+    rest.push(d[i].toString(16).padStart(2,'0'));i++;
+  }
+  return out.join('\n')+(rest.length?'\n\n[other bytes] '+rest.join(' '):'');
+}
+async function verifySV2(text){
+  const t=text.trim();
+  if(!/^SV\d+:/.test(t))return null;
+  const b=b45(t.replace(/^SV\d+:/,''));
+  if(!b||b.length<70)return null;
+  const len=(b[2]<<8)|b[3];
+  const pay=b.slice(4,4+len);
+  const sig=b.slice(4+len);
+  let d=pay;
+  if(b[1]&1){try{d=await inflateRaw(pay)}catch(e){return null}}
+  const res={status:'',key:null,content:readSV(d)};
+  if(!keys.length){res.status='nokeys';return res}
+  const sg=sig.length===64?sig:derToRaw(sig);
+  if(sg){
+    for(const k of keys){
+      let ck;try{ck=await keyObj(k)}catch(e){continue}
+      for(const m of [d,pay,b.slice(0,4+len)]){
+        try{if(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},ck,sg,m)){res.status='ok';res.key=k;return res}}catch(e){}
       }
     }
-
-    function generateRandomInvoiceId() {
-      const year = new Date().getFullYear();
-      const rand = Math.floor(100000 + Math.random() * 900000);
-      document.getElementById('issue-inv-id').value = `INV-${year}-${rand}`;
-    }
-
-    function setTodayDate() {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      document.getElementById('issue-date').value = `${yyyy}-${mm}-${dd}`;
-    }
-
-    function addLineItem(name = '', qty = 1, price = '') {
-      const container = document.getElementById('line-items-container');
-      const row = document.createElement('div');
-      row.className = 'line-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/70 sm:bg-transparent p-2.5 sm:p-0 rounded-xl border sm:border-0 border-slate-200';
-      row.innerHTML = `
-        <div class="col-span-12 sm:col-span-5">
-          <input type="text" class="item-name w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="Product name" value="${escapeHtml(name)}" />
-        </div>
-        <div class="col-span-4 sm:col-span-2">
-          <input type="number" min="0.01" step="any" class="item-qty w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs sm:text-sm text-right font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="Qty" value="${qty}" oninput="recalculateTotals()" />
-        </div>
-        <div class="col-span-4 sm:col-span-2">
-          <input type="number" min="0" step="any" class="item-price w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs sm:text-sm text-right font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="0.00" value="${price}" oninput="recalculateTotals()" />
-        </div>
-        <div class="col-span-3 sm:col-span-2 text-right font-mono text-xs sm:text-sm font-semibold text-slate-700 item-line-total">
-          0.00
-        </div>
-        <div class="col-span-1 flex justify-end">
-          <button type="button" onclick="removeLineItem(this)" title="Remove item" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
-      `;
-      container.appendChild(row);
-      recalculateTotals();
-    }
-
-    function addSampleBulkItems() {
-      addLineItem('Mechanical Keyboard', 1, 135.00);
-      addLineItem('Wireless Mouse', 2, 45.50);
-      addLineItem('USB-C Hub Adapter', 1, 39.00);
-      showToast('Added 3 sample items.', 'info');
-    }
-
-    function removeLineItem(btn) {
-      const container = document.getElementById('line-items-container');
-      if (container.children.length <= 1) {
-        showToast('At least one product item is required.', 'info');
-        return;
-      }
-      btn.closest('.line-item-row').remove();
-      recalculateTotals();
-    }
-
-    function recalculateTotals() {
-      const rows = document.querySelectorAll('.line-item-row');
-      const currency = document.getElementById('issue-currency').value || 'USD';
-      let grandTotal = 0;
-
-      rows.forEach((row) => {
-        const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-        const price = parseFloat(row.querySelector('.item-price').value) || 0;
-        const lineTotal = Math.round(qty * price * 100) / 100;
-        grandTotal += lineTotal;
-        row.querySelector('.item-line-total').textContent = formatNumber(lineTotal);
-      });
-
-      document.getElementById('issue-item-count').textContent = `${rows.length} item${rows.length === 1 ? '' : 's'}`;
-      document.getElementById('issue-grand-total').textContent = `${formatNumber(grandTotal)} ${currency}`;
-    }
-
-    function resetIssueForm() {
-      generateRandomInvoiceId();
-      setTodayDate();
-      document.getElementById('issue-merchant').value = 'Acme Digital Store';
-      const container = document.getElementById('line-items-container');
-      container.innerHTML = '';
-      addLineItem('Hardware Security Key', 1, 49.00);
-      addLineItem('USB-C Cable', 2, 12.50);
-      document.getElementById('seal-empty-state').classList.remove('hidden');
-      document.getElementById('seal-result-container').classList.add('hidden');
-      document.getElementById('seal-byte-badge').classList.add('hidden');
-    }
-
-    function setIssueCarrierMode(mode) {
-      appState.issueCarrierMode = mode;
-      const qrBtn = document.getElementById('carrier-btn-qr');
-      const mosaicBtn = document.getElementById('carrier-btn-mosaic');
-      const configPanel = document.getElementById('mosaic-config-panel');
-      const btnText = document.getElementById('btn-sign-generate-text');
-      const emptyTitle = document.getElementById('empty-state-title');
-      const emptyDesc = document.getElementById('empty-state-desc');
-
-      if (mode === 'mosaic') {
-        mosaicBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
-        qrBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-        configPanel.classList.remove('hidden');
-        btnText.textContent = 'Sign & Generate RSQ3 Art Card';
-        emptyTitle.textContent = 'No RSQ3 Art Card Generated Yet';
-        emptyDesc.textContent = 'Select an art theme or upload a custom photo above, then click "Sign & Generate RSQ3 Art Card".';
-        if (!appState.mosaicCoverImage) {
-          generateProceduralArtTheme('emerald', true);
-        }
-      } else {
-        qrBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-2xs transition flex items-center justify-center gap-1.5';
-        mosaicBtn.className = 'py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-        configPanel.classList.add('hidden');
-        btnText.textContent = 'Sign & Generate Receipt QR Code';
-        emptyTitle.textContent = 'No Seal Generated Yet';
-        emptyDesc.textContent = 'Add your purchased items on the left and click "Sign & Generate Receipt QR Code".';
-      }
-    }
-
-    function selectMosaicTheme(themeKey) {
-      generateProceduralArtTheme(themeKey, false);
-      document.querySelectorAll('.theme-preset-btn').forEach((btn) => {
-        btn.classList.remove('border-2', 'border-indigo-500');
-      });
-      const activeBtn = document.getElementById('theme-btn-' + themeKey);
-      if (activeBtn) {
-        activeBtn.classList.add('border-2', 'border-indigo-500');
-      }
-    }
-
-    function handleMosaicCoverUpload(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const img = new Image();
-        img.onload = function () {
-          appState.mosaicCoverImage = img;
-          appState.mosaicTheme = 'custom';
-          document.getElementById('mosaic-cover-filename').textContent = file.name;
-          document.getElementById('mosaic-cover-dims').textContent = `${img.width}×${img.height}px • Blended into 1260×945 RSQ3 Art Card`;
-          showToast('Custom photo loaded into RSQ3 Art Card!', 'success');
-        };
-        img.onerror = () => showToast('Failed to load image file.', 'error');
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function generateProceduralArtTheme(theme = 'emerald', silent = false) {
-      appState.mosaicTheme = theme;
-      const W = RSQ3_CFG.WIDTH;
-      const H = RSQ3_CFG.HEIGHT;
-      const canvas = document.createElement('canvas');
-      canvas.width = W;
-      canvas.height = H;
-      const ctx = canvas.getContext('2d');
-
-      const themes = {
-        emerald: {
-          bg1: '#022c22', bg2: '#064e3b', bg3: '#0f172a',
-          accent: '#34d399', soft: 'rgba(52, 211, 153, 0.22)',
-          title: '#ecfdf5', sub: '#6ee7b7', label: 'GUILLOCHÉ EMERALD VAULT',
-        },
-        indigo: {
-          bg1: '#090d16', bg2: '#1e1b4b', bg3: '#172554',
-          accent: '#38bdf8', soft: 'rgba(56, 189, 248, 0.22)',
-          title: '#f0f9ff', sub: '#7dd3fc', label: 'HOLOGRAPHIC INDIGO WAVE',
-        },
-        gold: {
-          bg1: '#1c1917', bg2: '#292524', bg3: '#0f172a',
-          accent: '#fbbf24', soft: 'rgba(251, 191, 36, 0.22)',
-          title: '#fef3c7', sub: '#fcd34d', label: 'GOLD BULLION LATTICE',
-        },
-        slate: {
-          bg1: '#0f172a', bg2: '#1e293b', bg3: '#334155',
-          accent: '#e2e8f0', soft: 'rgba(226, 232, 240, 0.18)',
-          title: '#f8fafc', sub: '#cbd5e1', label: 'MINIMALIST SLATE CARD',
-        },
-      };
-
-      const t = themes[theme] || themes.emerald;
-      const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, t.bg1);
-      grad.addColorStop(0.5, t.bg2);
-      grad.addColorStop(1, t.bg3);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-
-      ctx.save();
-      if (theme === 'emerald' || theme === 'gold') {
-        ctx.translate(W / 2, H / 2);
-        ctx.strokeStyle = t.soft;
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 24; i++) {
-          ctx.rotate(Math.PI / 12);
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 420, 155, 0, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-      } else if (theme === 'indigo') {
-        ctx.strokeStyle = t.soft;
-        ctx.lineWidth = 2.5;
-        for (let w = 0; w < 14; w++) {
-          ctx.beginPath();
-          for (let x = 0; x <= W; x += 24) {
-            const y = H * 0.5 + Math.sin(x * 0.008 + w * 0.45) * 165 + (w - 7) * 26;
-            if (x === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-        }
-      } else {
-        ctx.strokeStyle = t.soft;
-        ctx.lineWidth = 1.5;
-        for (let x = 110; x < W - 110; x += 66) {
-          ctx.beginPath();
-          ctx.moveTo(x, 110);
-          ctx.lineTo(x, H - 110);
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-
-      ctx.strokeStyle = t.soft;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(125, 125, W - 250, H - 250);
-
-      const merchant = document.getElementById('issue-merchant')?.value.trim() || 'ACME DIGITAL STORE';
-      const invId = document.getElementById('issue-inv-id')?.value.trim() || 'OFFICIAL RECEIPT';
-      const dt = document.getElementById('issue-date')?.value.trim() || '';
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = t.sub;
-      ctx.font = '700 22px Inter, sans-serif';
-      ctx.fillText(t.label, W / 2, 335);
-
-      ctx.fillStyle = t.title;
-      ctx.font = '800 52px Inter, sans-serif';
-      ctx.fillText(merchant.slice(0, 26), W / 2, 425);
-
-      ctx.fillStyle = t.accent;
-      ctx.font = '600 32px JetBrains Mono, monospace';
-      ctx.fillText(invId, W / 2, 495);
-
-      if (dt) {
-        ctx.fillStyle = 'rgba(255,255,255,0.78)';
-        ctx.font = '500 22px Inter, sans-serif';
-        ctx.fillText('Issued: ' + dt, W / 2, 550);
-      }
-
-      ctx.fillStyle = t.sub;
-      ctx.font = '600 19px Inter, sans-serif';
-      ctx.fillText('ECDSA P-256 AUTHENTICATED • ZERO EXPIRATION', W / 2, 635);
-
-      appState.mosaicCoverImage = canvas;
-      document.getElementById('mosaic-cover-filename').textContent = `Theme: ${t.label} (1360×960)`;
-      document.getElementById('mosaic-cover-dims').textContent = 'RSQ3 QR-Anchored Mosaic • Compression & Screenshot Proof';
-      if (!silent) {
-        showToast(`Applied ${t.label} theme.`, 'info');
-      }
-    }
-
-    function computeCRC16(bytes) {
-      let crc = 0xffff;
-      for (let i = 0; i < bytes.length; i++) {
-        crc ^= bytes[i] << 8;
-        for (let j = 0; j < 8; j++) {
-          if (crc & 0x8000) {
-            crc = ((crc << 1) ^ 0x1021) & 0xffff;
-          } else {
-            crc = (crc << 1) & 0xffff;
-          }
-        }
-      }
-      return crc & 0xffff;
-    }
-
-    function encodeBinaryReceiptPayload(d) {
-      const enc = new TextEncoder();
-      const chunks = [];
-      const pushVarUint = (val) => {
-        let v = Math.max(0, Math.round(val));
-        while (v >= 0x80) {
-          chunks.push((v & 0x7f) | 0x80);
-          v = Math.floor(v / 128);
-        }
-        chunks.push(v & 0x7f);
-      };
-      const pushStr = (s) => {
-        const b = enc.encode(String(s || ''));
-        pushVarUint(b.length);
-        for (let i = 0; i < b.length; i++) chunks.push(b[i]);
-      };
-
-      const hasM = typeof d.m === 'string' && d.m.length > 0;
-      chunks.push(hasM ? 1 : 0);
-      pushStr(d.id);
-      pushStr(d.dt);
-      pushStr(d.c || 'USD');
-      if (hasM) pushStr(d.m);
-
-      const items = Array.isArray(d.i) ? d.i : [];
-      pushVarUint(items.length);
-      for (const it of items) {
-        pushStr(it[0]);
-        pushVarUint(Math.round(Number(it[1]) * 10000));
-        pushVarUint(Math.round(Number(it[2]) * 100));
-      }
-      pushVarUint(Math.round(Number(d.t) * 100));
-      return new Uint8Array(chunks);
-    }
-
-    function decodeBinaryReceiptPayload(bytes) {
-      const dec = new TextDecoder('utf-8', { fatal: true });
-      let pos = 0;
-      const readVarUint = () => {
-        let res = 0;
-        let mul = 1;
-        while (pos < bytes.length) {
-          const b = bytes[pos++];
-          res += (b & 0x7f) * mul;
-          if ((b & 0x80) === 0) return res;
-          mul *= 128;
-        }
-        throw new Error('Truncated varint');
-      };
-      const readStr = () => {
-        const len = readVarUint();
-        if (pos + len > bytes.length) throw new Error('Truncated string');
-        const str = dec.decode(bytes.subarray(pos, pos + len));
-        pos += len;
-        return str;
-      };
-
-      const flags = bytes[pos++];
-      const id = readStr();
-      const dt = readStr();
-      const c = readStr();
-      const m = (flags & 1) ? readStr() : undefined;
-
-      const count = readVarUint();
-      const items = [];
-      for (let k = 0; k < count; k++) {
-        const name = readStr();
-        const q = Math.round(readVarUint()) / 10000;
-        const p = Math.round(readVarUint()) / 100;
-        items.push([name, q, p]);
-      }
-      const t = Math.round(readVarUint()) / 100;
-      const d = { id, dt, c, i: items, t };
-      if (m !== undefined) d.m = m;
-      return d;
-    }
-
-    function packSignedEnvelopeToRSB2(signedEnvelope) {
-      const dataBytes = encodeBinaryReceiptPayload(signedEnvelope.d);
-      const sigBytes = new Uint8Array(base64UrlToArrayBuffer(signedEnvelope.s));
-      if (sigBytes.length !== 64) {
-        throw new Error(`Expected 64-byte ECDSA P-256 signature, got ${sigBytes.length} bytes.`);
-      }
-
-      const bodyLen = 6 + dataBytes.length + 64;
-      if (bodyLen + 2 > RSQ3_CFG.MAX_PACKET_BYTES) {
-        throw new Error(
-          `Binary packet is ${bodyLen + 2} bytes (max ${RSQ3_CFG.MAX_PACKET_BYTES} bytes for RSQ3 Art Card). Use Mode A (High-Clarity QR) for extremely large receipts.`
-        );
-      }
-
-      const packet = new Uint8Array(bodyLen + 2);
-      packet[0] = 0x52;
-      packet[1] = 0x53;
-      packet[2] = 0x42;
-      packet[3] = 0x33;
-      packet[4] = (dataBytes.length >>> 8) & 0xff;
-      packet[5] = dataBytes.length & 0xff;
-      packet.set(dataBytes, 6);
-      packet.set(sigBytes, 6 + dataBytes.length);
-
-      const crc = computeCRC16(packet.subarray(0, bodyLen));
-      packet[bodyLen] = (crc >>> 8) & 0xff;
-      packet[bodyLen + 1] = crc & 0xff;
-      return packet;
-    }
-
-    function unpackRSB2ToCanonicalJson(packetBytes) {
-      if (!packetBytes || packetBytes.length < 74) return null;
-      const isRSB2 = packetBytes[0] === 0x52 && packetBytes[1] === 0x53 && packetBytes[2] === 0x42 && packetBytes[3] === 0x32;
-      const isRSB3 = packetBytes[0] === 0x52 && packetBytes[1] === 0x53 && packetBytes[2] === 0x42 && packetBytes[3] === 0x33;
-      if (!isRSB2 && !isRSB3) return null;
-
-      const dataLen = (packetBytes[4] << 8) | packetBytes[5];
-      const bodyLen = 6 + dataLen + 64;
-      if (dataLen <= 2 || bodyLen + 2 > packetBytes.length) return null;
-
-      const expectedCrc = (packetBytes[bodyLen] << 8) | packetBytes[bodyLen + 1];
-      const actualCrc = computeCRC16(packetBytes.subarray(0, bodyLen));
-      if (actualCrc !== expectedCrc) return null;
-
-      try {
-        const dataSlice = packetBytes.subarray(6, 6 + dataLen);
-        const sigSlice = packetBytes.slice(6 + dataLen, 6 + dataLen + 64);
-        const dataObj = isRSB3
-          ? decodeBinaryReceiptPayload(dataSlice)
-          : JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(dataSlice));
-        const sigB64u = arrayBufferToBase64Url(sigSlice.buffer);
-        return JSON.stringify({ v: 1, d: dataObj, s: sigB64u });
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function getRSQ3DataTilePairs() {
-      const pairs = [];
-      const { COLS, ROWS, ANCHOR_TILES } = RSQ3_CFG;
-      const isExcluded = (c, r) => {
-        if (c < ANCHOR_TILES && r < ANCHOR_TILES) return true;
-        if (c >= COLS - ANCHOR_TILES && r >= ROWS - ANCHOR_TILES) return true;
-        return false;
-      };
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c + 1 < COLS; c += 2) {
-          if (!isExcluded(c, r) && !isExcluded(c + 1, r)) {
-            pairs.push([c, r, c + 1, r]);
-          }
-        }
-      }
-      return pairs;
-    }
-
-    function applyTileLuminanceShift(data, stride, x0, y0, x1, y1, shift) {
-      for (let y = y0; y < y1; y++) {
-        const edgeY = y - y0 < 2 || y1 - 1 - y < 2;
-        for (let x = x0; x < x1; x++) {
-          const edgeX = x - x0 < 2 || x1 - 1 - x < 2;
-          const factor = edgeX || edgeY ? 0.45 : 1.0;
-          const idx = (y * stride + x) * 4;
-          const d = shift * factor;
-          data[idx] = Math.max(0, Math.min(255, Math.round(data[idx] + d)));
-          data[idx + 1] = Math.max(0, Math.min(255, Math.round(data[idx + 1] + d)));
-          data[idx + 2] = Math.max(0, Math.min(255, Math.round(data[idx + 2] + d)));
-          data[idx + 3] = 255;
+  }
+  res.status='bad';res.tried=keys.length;
+  return res;
+}
+async function verify(text){
+  const sv=await verifySV2(text);
+  if(sv)return sv;
+  const cands=parse(text,0);
+  const res={status:'',key:null,content:pretty(text)};
+  if(!cands.length){res.status='nosig';return res}
+  res.content=cands[0].content;
+  if(!keys.length){res.status='nokeys';return res}
+  for(const k of keys){
+    let ck;
+    try{ck=await keyObj(k)}catch(e){continue}
+    for(const c of cands){
+      for(const m of c.msgs){
+        for(const h of ['SHA-256','SHA-384','SHA-512']){
+          try{
+            const ok=await crypto.subtle.verify({name:'ECDSA',hash:h},ck,c.sig,m);
+            if(ok){res.status='ok';res.key=k;res.content=c.content;return res}
+          }catch(e){}
         }
       }
     }
-
-    async function embedRSQ3ArtCard(sourceImage, targetCanvas, signedEnvelope) {
-      const QR = await ensureQRCodeLibrary();
-      const pkt = packSignedEnvelopeToRSB2(signedEnvelope);
-      const pairs = getRSQ3DataTilePairs();
-      const neededBits = pkt.length * 8;
-      if (neededBits > pairs.length) {
-        throw new Error(`Payload requires ${neededBits} bits, max ${pairs.length} bits.`);
-      }
-
-      const { WIDTH, HEIGHT, COLS, ROWS, MARGIN_X, MARGIN_Y, ANCHOR_TILES } = RSQ3_CFG;
-      const tileW = (WIDTH - 2 * MARGIN_X) / COLS;
-      const tileH = (HEIGHT - 2 * MARGIN_Y) / ROWS;
-      const deltaL = Number(document.getElementById('mosaic-strength-select')?.value || '74') || 74;
-
-      targetCanvas.width = WIDTH;
-      targetCanvas.height = HEIGHT;
-      const ctx = targetCanvas.getContext('2d', { willReadFrequently: true });
-
-      const srcW = sourceImage.naturalWidth || sourceImage.width;
-      const srcH = sourceImage.naturalHeight || sourceImage.height;
-      const scale = Math.max(WIDTH / srcW, HEIGHT / srcH);
-      const dw = srcW * scale;
-      const dh = srcH * scale;
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      ctx.drawImage(sourceImage, (WIDTH - dw) / 2, (HEIGHT - dh) / 2, dw, dh);
-
-      const imgData = ctx.getImageData(0, 0, WIDTH, HEIGHT);
-      const data = imgData.data;
-
-      for (let i = 0; i < pairs.length; i++) {
-        const byteIdx = i >> 3;
-        const bitIdx = 7 - (i & 7);
-        const bit = byteIdx < pkt.length ? ((pkt[byteIdx] >> bitIdx) & 1) : ((i * 7 + 3) & 1);
-
-        const [cA, rA, cB, rB] = pairs[i];
-        const xA0 = Math.round(MARGIN_X + cA * tileW);
-        const yA0 = Math.round(MARGIN_Y + rA * tileH);
-        const xA1 = Math.round(MARGIN_X + (cA + 1) * tileW);
-        const yA1 = Math.round(MARGIN_Y + (rA + 1) * tileH);
-
-        const xB0 = Math.round(MARGIN_X + cB * tileW);
-        const yB0 = Math.round(MARGIN_Y + rB * tileH);
-        const xB1 = Math.round(MARGIN_X + (cB + 1) * tileW);
-        const yB1 = Math.round(MARGIN_Y + (rB + 1) * tileH);
-
-        const shiftA = bit === 1 ? +deltaL * 0.52 : -deltaL * 0.52;
-        const shiftB = bit === 1 ? -deltaL * 0.52 : +deltaL * 0.52;
-
-        applyTileLuminanceShift(data, WIDTH, xA0, yA0, xA1, yA1, shiftA);
-        applyTileLuminanceShift(data, WIDTH, xB0, yB0, xB1, yB1, shiftB);
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-
-      const anchorSize = Math.round(ANCHOR_TILES * tileW);
-      const tlCanvas = document.createElement('canvas');
-      const brCanvas = document.createElement('canvas');
-      await QR.toCanvas(tlCanvas, 'RS3:TL', {
-        width: anchorSize,
-        margin: 1,
-        errorCorrectionLevel: 'M',
-        color: { dark: '#000000', light: '#ffffff' },
-      });
-      await QR.toCanvas(brCanvas, 'RS3:BR', {
-        width: anchorSize,
-        margin: 1,
-        errorCorrectionLevel: 'M',
-        color: { dark: '#000000', light: '#ffffff' },
-      });
-
-      const tlX = Math.round(MARGIN_X);
-      const tlY = Math.round(MARGIN_Y);
-      const brX = Math.round(MARGIN_X + (COLS - ANCHOR_TILES) * tileW);
-      const brY = Math.round(MARGIN_Y + (ROWS - ANCHOR_TILES) * tileH);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(tlX - 5, tlY - 5, anchorSize + 10, anchorSize + 10);
-      ctx.fillRect(brX - 5, brY - 5, anchorSize + 10, anchorSize + 10);
-
-      ctx.drawImage(tlCanvas, tlX, tlY, anchorSize, anchorSize);
-      ctx.drawImage(brCanvas, brX, brY, anchorSize, anchorSize);
-
-      const noteEl = document.getElementById('mosaic-capacity-note');
-      if (noteEl) {
-        noteEl.innerHTML = `<span class="text-emerald-700 font-semibold">✓ RSQ3 QR-Anchored Art Card Ready (${pkt.length}/${RSQ3_CFG.MAX_PACKET_BYTES} bytes)</span> — Survives screenshots, messaging JPEG compression, rotation &amp; live camera scans.`;
-      }
-    }
-
-    function solveAffineTransform(srcPts, dstPts) {
-      const A = [];
-      const B = [];
-      for (let i = 0; i < 3; i++) {
-        const [u, v] = srcPts[i];
-        const [x, y] = dstPts[i];
-        A.push([u, v, 1, 0, 0, 0]);
-        B.push(x);
-        A.push([0, 0, 0, u, v, 1]);
-        B.push(y);
-      }
-      const n = 6;
-      const M = A.map((row, i) => [...row, B[i]]);
-      for (let col = 0; col < n; col++) {
-        let maxRow = col;
-        for (let row = col + 1; row < n; row++) {
-          if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
-        }
-        [M[col], M[maxRow]] = [M[maxRow], M[col]];
-        if (Math.abs(M[col][col]) < 1e-9) return null;
-        for (let row = col + 1; row < n; row++) {
-          const f = M[row][col] / M[col][col];
-          for (let k = col; k <= n; k++) M[row][k] -= f * M[col][k];
-        }
-      }
-      const sol = new Array(n).fill(0);
-      for (let i = n - 1; i >= 0; i--) {
-        let sum = M[i][n];
-        for (let j = i + 1; j < n; j++) sum -= M[i][j] * sol[j];
-        sol[i] = sum / M[i][i];
-      }
-      return (u, v) => [
-        sol[0] * u + sol[1] * v + sol[2],
-        sol[3] * u + sol[4] * v + sol[5],
-      ];
-    }
-
-    function findAllQRCodesInImageData(imgData) {
-      if (typeof window.jsQR !== 'function') return [];
-      const { width, height, data } = imgData;
-      const working = new Uint8ClampedArray(data);
-      const found = [];
-
-      for (let pass = 0; pass < 4; pass++) {
-        const code = window.jsQR(working, width, height, { inversionAttempts: 'attemptBoth' });
-        if (!code || !code.location) break;
-        found.push(code);
-
-        const loc = code.location;
-        const xs = [loc.topLeftCorner.x, loc.topRightCorner.x, loc.bottomRightCorner.x, loc.bottomLeftCorner.x];
-        const ys = [loc.topLeftCorner.y, loc.topRightCorner.y, loc.bottomRightCorner.y, loc.bottomLeftCorner.y];
-        const minX = Math.max(0, Math.floor(Math.min(...xs)) - 8);
-        const maxX = Math.min(width - 1, Math.ceil(Math.max(...xs)) + 8);
-        const minY = Math.max(0, Math.floor(Math.min(...ys)) - 8);
-        const maxY = Math.min(height - 1, Math.ceil(Math.max(...ys)) + 8);
-
-        for (let y = minY; y <= maxY; y++) {
-          for (let x = minX; x <= maxX; x++) {
-            const idx = (y * width + x) * 4;
-            working[idx] = 128;
-            working[idx + 1] = 128;
-            working[idx + 2] = 128;
-          }
-        }
-      }
-      return found;
-    }
-
-    function sampleTileCoreLuminance(data, width, height, cx, cy, halfBoxW, halfBoxH) {
-      const x0 = Math.max(0, Math.floor(cx - halfBoxW));
-      const x1 = Math.min(width - 1, Math.ceil(cx + halfBoxW));
-      const y0 = Math.max(0, Math.floor(cy - halfBoxH));
-      const y1 = Math.min(height - 1, Math.ceil(cy + halfBoxH));
-      let sum = 0;
-      let count = 0;
-      for (let y = y0; y <= y1; y++) {
-        for (let x = x0; x <= x1; x++) {
-          const idx = (y * width + x) * 4;
-          sum += 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-          count++;
-        }
-      }
-      return count > 0 ? sum / count : 0;
-    }
-
-    function decodeRSQ3FromImageData(imgData, qrCodes) {
-      const tlCode = qrCodes.find((c) => c.data === 'RS3:TL');
-      const brCode = qrCodes.find((c) => c.data === 'RS3:BR');
-      if (!tlCode || !brCode) return null;
-
-      const { COLS, ROWS, ANCHOR_TILES } = RSQ3_CFG;
-      const srcPts = [
-        [0, 0],
-        [ANCHOR_TILES, 0],
-        [COLS, ROWS],
-      ];
-      const dstPts = [
-        [tlCode.location.topLeftCorner.x, tlCode.location.topLeftCorner.y],
-        [tlCode.location.topRightCorner.x, tlCode.location.topRightCorner.y],
-        [brCode.location.bottomRightCorner.x, brCode.location.bottomRightCorner.y],
-      ];
-
-      const mapUV = solveAffineTransform(srcPts, dstPts);
-      if (!mapUV) return null;
-
-      const [p00x, p00y] = mapUV(0, 0);
-      const [p10x, p10y] = mapUV(1, 0);
-      const [p01x, p01y] = mapUV(0, 1);
-      const tilePixW = Math.hypot(p10x - p00x, p10y - p00y);
-      const tilePixH = Math.hypot(p01x - p00x, p01y - p00y);
-      const halfBoxW = Math.max(1.5, tilePixW * 0.26);
-      const halfBoxH = Math.max(1.5, tilePixH * 0.26);
-
-      const pairs = getRSQ3DataTilePairs();
-      const byteCount = Math.floor(pairs.length / 8);
-      const outBytes = new Uint8Array(byteCount);
-
-      for (let i = 0; i < byteCount * 8; i++) {
-        const [cA, rA, cB, rB] = pairs[i];
-        const [xA, yA] = mapUV(cA + 0.5, rA + 0.5);
-        const [xB, yB] = mapUV(cB + 0.5, rB + 0.5);
-
-        const lumA = sampleTileCoreLuminance(imgData.data, imgData.width, imgData.height, xA, yA, halfBoxW, halfBoxH);
-        const lumB = sampleTileCoreLuminance(imgData.data, imgData.width, imgData.height, xB, yB, halfBoxW, halfBoxH);
-        const bit = lumA > lumB ? 1 : 0;
-
-        const byteIdx = i >> 3;
-        const bitIdx = 7 - (i & 7);
-        if (bit) outBytes[byteIdx] |= 1 << bitIdx;
-      }
-
-      const canonicalJson = unpackRSB2ToCanonicalJson(outBytes);
-      if (!canonicalJson) return null;
-
-      return {
-        payload: canonicalJson,
-        qrLocations: [tlCode.location, brCode.location],
-      };
-    }
-
-    function scanImageDataForReceipt(imgData) {
-      const qrCodes = findAllQRCodesInImageData(imgData);
-
-      for (const code of qrCodes) {
-        if (code.data && code.data !== 'RS3:TL' && code.data !== 'RS3:BR') {
-          try {
-            const parsed = JSON.parse(code.data);
-            if (parsed && parsed.d && parsed.s) {
-              return {
-                method: 'Standard QR Code',
-                payload: code.data,
-                qrLocations: [code.location],
-              };
-            }
-          } catch (_) {}
-        }
-      }
-
-      const rsq3 = decodeRSQ3FromImageData(imgData, qrCodes);
-      if (rsq3 && rsq3.payload) {
-        return {
-          method: 'RSQ3 QR-Anchored Art Card',
-          payload: rsq3.payload,
-          qrLocations: rsq3.qrLocations,
-        };
-      }
-
-      const anchorLocations = qrCodes
-        .filter((c) => c.data === 'RS3:TL' || c.data === 'RS3:BR')
-        .map((c) => c.location);
-
-      return anchorLocations.length > 0 ? { partialAnchors: anchorLocations } : null;
-    }
-
-    async function handleSignAndGenerate() {
-      if (!appState.privateKey) {
-        showToast('Cannot sign: No Private Key loaded. Check Key Management.', 'error');
-        return;
-      }
-
-      const id = document.getElementById('issue-inv-id').value.trim();
-      const dt = document.getElementById('issue-date').value.trim();
-      const c = document.getElementById('issue-currency').value.trim() || 'USD';
-      const m = document.getElementById('issue-merchant').value.trim();
-
-      if (!id) {
-        showToast('Please enter an Invoice ID.', 'error');
-        return;
-      }
-      if (!dt) {
-        showToast('Please select a Purchase Date.', 'error');
-        return;
-      }
-
-      const items = [];
-      let grandTotal = 0;
-      const rows = document.querySelectorAll('.line-item-row');
-      for (const row of rows) {
-        const name = row.querySelector('.item-name').value.trim();
-        const qty = parseFloat(row.querySelector('.item-qty').value);
-        const price = parseFloat(row.querySelector('.item-price').value);
-
-        if (!name) {
-          showToast('Please enter a product name for all rows.', 'error');
-          return;
-        }
-        if (isNaN(qty) || qty <= 0) {
-          showToast(`Invalid quantity for "${name}".`, 'error');
-          return;
-        }
-        if (isNaN(price) || price < 0) {
-          showToast(`Invalid unit price for "${name}".`, 'error');
-          return;
-        }
-        items.push([name, Number(qty), Number(price)]);
-        grandTotal = Math.round((grandTotal + qty * price) * 100) / 100;
-      }
-
-      const receiptData = {
-        id,
-        dt,
-        c,
-        i: items,
-        t: grandTotal,
-      };
-      if (m) {
-        receiptData.m = m;
-      }
-
-      try {
-        const signedEnvelope = await signReceiptData(receiptData);
-        const compactJsonString = JSON.stringify(signedEnvelope);
-        const byteLength = new TextEncoder().encode(compactJsonString).length;
-
-        appState.lastGeneratedPayload = compactJsonString;
-        appState.lastGeneratedInvId = id;
-        appState.lastGeneratedCarrier = appState.issueCarrierMode;
-
-        const canvas = document.getElementById('generated-seal-canvas');
-        const mosaicBadge = document.getElementById('mosaic-active-badge');
-        const dlBtnText = document.getElementById('btn-download-seal-text');
-
-        if (appState.issueCarrierMode === 'mosaic') {
-          if (!appState.mosaicCoverImage) {
-            generateProceduralArtTheme('emerald', true);
-          }
-          await embedRSQ3ArtCard(appState.mosaicCoverImage, canvas, signedEnvelope);
-          mosaicBadge.classList.remove('hidden');
-          dlBtnText.textContent = 'Download RSQ3 PNG';
-        } else {
-          const qrLib = await ensureQRCodeLibrary();
-          const qrSize = byteLength > 450 ? 520 : byteLength > 250 ? 440 : 380;
-          await qrLib.toCanvas(canvas, compactJsonString, {
-            width: qrSize,
-            margin: 3,
-            errorCorrectionLevel: 'M',
-            color: {
-              dark: '#0f172a',
-              light: '#ffffff',
-            },
-          });
-          mosaicBadge.classList.add('hidden');
-          dlBtnText.textContent = 'Download / Save QR PNG';
-        }
-
-        const previewImg = document.getElementById('generated-seal-img');
-        if (previewImg) {
-          previewImg.src = canvas.toDataURL('image/png');
-        }
-
-        document.getElementById('seal-empty-state').classList.add('hidden');
-        document.getElementById('seal-result-container').classList.remove('hidden');
-        const byteBadge = document.getElementById('seal-byte-badge');
-        byteBadge.textContent = `${byteLength} bytes`;
-        byteBadge.classList.remove('hidden');
-        document.getElementById('generated-payload-preview').textContent = compactJsonString;
-
-        saveReceiptToVault(
-          signedEnvelope,
-          appState.issueCarrierMode === 'mosaic' ? 'Issued (RSQ3 Art Card)' : 'Issued (QR)',
-          true
-        );
-
-        showToast(
-          appState.issueCarrierMode === 'mosaic'
-            ? `Receipt ${id} signed & encoded into RSQ3 Art Card!`
-            : `Receipt ${id} signed & QR Code generated!`,
-          'success'
-        );
-      } catch (err) {
-        console.error('Seal generation error:', err);
-        showToast('Error: ' + err.message, 'error');
-      }
-    }
-
-    function isIOSDevice() {
-      const ua = navigator.userAgent || '';
-      return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    }
-
-    function canvasToPngBlob(canvas) {
-      return new Promise((resolve) => {
-        if (canvas.toBlob) {
-          canvas.toBlob((blob) => {
-            if (blob) return resolve(blob);
-            resolve(dataUrlToBlob(canvas.toDataURL('image/png')));
-          }, 'image/png');
-        } else {
-          resolve(dataUrlToBlob(canvas.toDataURL('image/png')));
-        }
-      });
-    }
-
-    function dataUrlToBlob(dataUrl) {
-      const parts = dataUrl.split(',');
-      const mime = parts[0].match(/:(.*?);/)[1] || 'image/png';
-      const bstr = atob(parts[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      return new Blob([u8arr], { type: mime });
-    }
-
-    async function saveCanvasAsPngCrossPlatform(canvas, filename) {
-      if (!canvas) return;
-      const dataUrl = canvas.toDataURL('image/png');
-      const blob = await canvasToPngBlob(canvas);
-      const isIOS = isIOSDevice();
-
-      if (isIOS && navigator.share && navigator.canShare) {
-        try {
-          const file = new File([blob], filename, { type: 'image/png' });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              files: [file],
-              title: filename,
-            });
-            showToast('Opened iOS Share Sheet — tap "Save Image" or "Save to Files".', 'success');
-            return;
-          }
-        } catch (err) {
-          if (err && err.name === 'AbortError') return;
-        }
-      }
-
-      if (isIOS) {
-        openIosSaveModal(dataUrl, blob, filename);
-        return;
-      }
-
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = filename;
-      link.href = blobUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      showToast(`Downloaded ${filename}`, 'success');
-    }
-
-    function openIosSaveModal(dataUrl, blob, filename) {
-      const modal = document.getElementById('ios-save-modal');
-      const img = document.getElementById('ios-save-preview-img');
-      const fnEl = document.getElementById('ios-save-filename');
-      const openTabBtn = document.getElementById('ios-open-tab-btn');
-
-      img.src = dataUrl;
-      fnEl.textContent = filename;
-      openTabBtn.onclick = () => {
-        const blobUrl = URL.createObjectURL(blob);
-        const win = window.open(blobUrl, '_blank');
-        if (!win) {
-          window.location.href = dataUrl;
-        }
-      };
-      modal.classList.remove('hidden');
-    }
-
-    function closeIosSaveModal() {
-      document.getElementById('ios-save-modal').classList.add('hidden');
-    }
-
-    async function downloadGeneratedSeal() {
-      const canvas = document.getElementById('generated-seal-canvas');
-      if (!canvas) return;
-      const safeId = (appState.lastGeneratedInvId || 'receipt').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const prefix = appState.lastGeneratedCarrier === 'mosaic' ? 'ReceiptSeal_RSQ3_' : 'ReceiptSeal_QR_';
-      await saveCanvasAsPngCrossPlatform(canvas, `${prefix}${safeId}.png`);
-    }
-
-    function copyGeneratedPayload() {
-      if (!appState.lastGeneratedPayload) return;
-      copyRawStringToClipboard(appState.lastGeneratedPayload, 'Signed Receipt JSON');
-    }
-
-    function sendGeneratedToVerifier() {
-      if (!appState.lastGeneratedPayload) return;
-      switchTab('verify');
-      setVerifyInputMode('paste');
-      document.getElementById('verify-raw-input').value = appState.lastGeneratedPayload;
-      verifyRawPayloadString(appState.lastGeneratedPayload, false);
-    }
-
-    function setVerifyInputMode(mode) {
-      if (mode !== 'camera' && appState.cameraStream) {
-        stopCameraScanner();
-      }
-
-      ['camera', 'upload', 'paste'].forEach((m) => {
-        const panel = document.getElementById('verify-panel-' + m);
-        const btn = document.getElementById('vmode-btn-' + m);
-        if (m === mode) {
-          panel.classList.remove('hidden');
-          btn.classList.add('bg-white', 'text-slate-900', 'shadow-2xs');
-          btn.classList.remove('text-slate-600');
-        } else {
-          panel.classList.add('hidden');
-          btn.classList.remove('bg-white', 'text-slate-900', 'shadow-2xs');
-          btn.classList.add('text-slate-600');
-        }
-      });
-    }
-
-    async function startCameraScanner() {
-      const errorEl = document.getElementById('camera-error-msg');
-      errorEl.classList.add('hidden');
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        errorEl.textContent = 'Camera API requires HTTPS or a supported browser.';
-        errorEl.classList.remove('hidden');
-        return;
-      }
-
-      try {
-        const selectEl = document.getElementById('camera-select');
-        const selectedDeviceId = selectEl.value;
-        const constraints = {
-          video: selectedDeviceId
-            ? { deviceId: { exact: selectedDeviceId } }
-            : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        appState.cameraStream = stream;
-
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter((d) => d.kind === 'videoinput');
-        if (videoDevices.length > 1) {
-          selectEl.innerHTML = videoDevices
-            .map((d, idx) => `<option value="${d.deviceId}">${escapeHtml(d.label || 'Camera ' + (idx + 1))}</option>`)
-            .join('');
-          if (selectedDeviceId) selectEl.value = selectedDeviceId;
-          selectEl.classList.remove('hidden');
-        }
-
-        const video = document.getElementById('qr-video');
-        video.srcObject = stream;
-        await video.play();
-
-        video.classList.remove('hidden');
-        document.getElementById('scanner-overlay').classList.remove('hidden');
-        document.getElementById('camera-placeholder').classList.add('hidden');
-        document.getElementById('btn-start-camera').classList.add('hidden');
-        document.getElementById('btn-stop-camera').classList.remove('hidden');
-
-        const scanCanvas = document.getElementById('qr-scan-canvas');
-        const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
-        const hudCanvas = document.getElementById('qr-hud-canvas');
-        const hudCtx = hudCanvas.getContext('2d');
-        hudCanvas.classList.remove('hidden');
-
-        const tick = () => {
-          if (!appState.cameraStream) return;
-
-          if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-            const vw = video.videoWidth;
-            const vh = video.videoHeight;
-            scanCanvas.width = vw;
-            scanCanvas.height = vh;
-            hudCanvas.width = vw;
-            hudCanvas.height = vh;
-
-            scanCtx.drawImage(video, 0, 0, vw, vh);
-            const imageData = scanCtx.getImageData(0, 0, vw, vh);
-            hudCtx.clearRect(0, 0, vw, vh);
-
-            const scanRes = scanImageDataForReceipt(imageData);
-            const statusPill = document.getElementById('scanner-status-pill');
-
-            if (scanRes && scanRes.payload) {
-              if (scanRes.qrLocations) {
-                hudCtx.strokeStyle = '#34d399';
-                hudCtx.lineWidth = Math.max(3, Math.round(vw * 0.004));
-                scanRes.qrLocations.forEach((loc) => {
-                  hudCtx.beginPath();
-                  hudCtx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
-                  hudCtx.lineTo(loc.topRightCorner.x, loc.topRightCorner.y);
-                  hudCtx.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
-                  hudCtx.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
-                  hudCtx.closePath();
-                  hudCtx.stroke();
-                });
-              }
-              stopCameraScanner();
-              showToast(`${scanRes.method} scanned from camera!`, 'info');
-              verifyRawPayloadString(scanRes.payload, true);
-              return;
-            } else if (scanRes && scanRes.partialAnchors) {
-              hudCtx.strokeStyle = '#fbbf24';
-              hudCtx.lineWidth = 3;
-              scanRes.partialAnchors.forEach((loc) => {
-                hudCtx.beginPath();
-                hudCtx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
-                hudCtx.lineTo(loc.topRightCorner.x, loc.topRightCorner.y);
-                hudCtx.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
-                hudCtx.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
-                hudCtx.closePath();
-                hudCtx.stroke();
-              });
-              if (statusPill) {
-                statusPill.textContent = 'Anchor Locked — Bring both corner QR stamps into view...';
-              }
-            } else if (statusPill) {
-              statusPill.textContent = 'Align QR Code or RSQ3 Art Card inside frame';
-            }
-          }
-          appState.cameraAnimFrame = requestAnimationFrame(tick);
-        };
-
-        appState.cameraAnimFrame = requestAnimationFrame(tick);
-      } catch (err) {
-        console.error('Camera start failed:', err);
-        errorEl.textContent = 'Camera access denied or unavailable: ' + err.message;
-        errorEl.classList.remove('hidden');
-      }
-    }
-
-    function stopCameraScanner() {
-      if (appState.cameraAnimFrame) {
-        cancelAnimationFrame(appState.cameraAnimFrame);
-        appState.cameraAnimFrame = null;
-      }
-      if (appState.cameraStream) {
-        appState.cameraStream.getTracks().forEach((track) => track.stop());
-        appState.cameraStream = null;
-      }
-      const video = document.getElementById('qr-video');
-      video.srcObject = null;
-      video.classList.add('hidden');
-      const hudCanvas = document.getElementById('qr-hud-canvas');
-      if (hudCanvas) {
-        hudCanvas.classList.add('hidden');
-      }
-      document.getElementById('scanner-overlay').classList.add('hidden');
-      document.getElementById('camera-placeholder').classList.remove('hidden');
-      document.getElementById('btn-start-camera').classList.remove('hidden');
-      document.getElementById('btn-stop-camera').classList.add('hidden');
-    }
-
-    function restartCameraWithSelection() {
-      if (appState.cameraStream) {
-        stopCameraScanner();
-        startCameraScanner();
-      }
-    }
-
-    function handleQRImageUpload(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const img = new Image();
-        img.onload = function () {
-          const origW = img.naturalWidth || img.width;
-          const origH = img.naturalHeight || img.height;
-          const maxDim = 1800;
-          const scale = Math.min(1, maxDim / Math.max(origW, origH));
-          const width = Math.round(origW * scale);
-          const height = Math.round(origH * scale);
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          ctx.drawImage(img, 0, 0, width, height);
-          const imageData = ctx.getImageData(0, 0, width, height);
-
-          const scanRes = scanImageDataForReceipt(imageData);
-          if (scanRes && scanRes.payload) {
-            showToast(`${scanRes.method} decoded from image!`, 'info');
-            verifyRawPayloadString(scanRes.payload, true);
-            event.target.value = '';
-            return;
-          }
-
-          showToast('No valid ReceiptSeal QR code or RSQ3 Art Card found in this image.', 'error');
-          event.target.value = '';
-        };
-        img.onerror = () => showToast('Failed to load image file.', 'error');
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function simulateTamperInPaste() {
-      const textarea = document.getElementById('verify-raw-input');
-      const val = textarea.value.trim();
-      if (!val) {
-        showToast('Paste or load a signed receipt payload first before tampering.', 'info');
-        return;
-      }
-      try {
-        const obj = JSON.parse(val);
-        const listKey = obj.d && Array.isArray(obj.d.i) ? 'i' : (obj.d && Array.isArray(obj.d.items) ? 'items' : null);
-        if (listKey && obj.d[listKey].length > 0) {
-          const origPrice = Number(obj.d[listKey][0][2]) || 10;
-          obj.d[listKey][0][2] = origPrice === 0 ? 1 : Number((origPrice + 1).toFixed(2));
-          textarea.value = JSON.stringify(obj);
-          showToast('Tampered with item price in JSON! Testing signature check...', 'info');
-          verifyRawPayloadString(textarea.value, false);
-        } else {
-          textarea.value = val.slice(0, -3) + 'XYZ';
-          verifyRawPayloadString(textarea.value, false);
-        }
-      } catch (e) {
-        textarea.value = val + ' ';
-        verifyRawPayloadString(textarea.value, false);
-      }
-    }
-
-    async function verifyRawPayloadString(rawString, saveToHistory = true) {
-      const trimmed = (rawString || '').trim();
-      if (!trimmed) {
-        showToast('Please enter or scan a receipt payload first.', 'error');
-        return;
-      }
-
-      let overrideKey = null;
-      const overrideRaw = document.getElementById('verify-override-pubkey').value.trim();
-      if (overrideRaw) {
-        try {
-          overrideKey = await parsePublicKeyFromString(overrideRaw);
-        } catch (err) {
-          showToast('Invalid Override Public Key: ' + err.message, 'error');
-          return;
-        }
-      }
-
-      let envelope = null;
-      try {
-        envelope = JSON.parse(trimmed);
-      } catch (err) {
-        renderVerificationResult(false, 'Invalid payload: Decoded text is not valid JSON.', null);
-        return;
-      }
-
-      const result = await verifyReceiptEnvelope(envelope, overrideKey);
-      renderVerificationResult(result.valid, result.reason, envelope.d || null);
-
-      if (saveToHistory && envelope && envelope.d && envelope.d.id) {
-        saveReceiptToVault(envelope, 'Verified', result.valid);
-      }
-    }
-
-    function renderVerificationResult(isValid, reasonMessage, receiptData) {
-      document.getElementById('verify-empty-state').classList.add('hidden');
-      const card = document.getElementById('verify-result-card');
-      const banner = document.getElementById('verify-status-banner');
-      const iconBox = document.getElementById('verify-status-icon');
-      const titleEl = document.getElementById('verify-status-title');
-      const subEl = document.getElementById('verify-status-subtitle');
-      const detailsBox = document.getElementById('verify-receipt-details');
-
-      card.classList.remove('hidden', 'border-emerald-500', 'border-rose-500');
-
-      if (isValid) {
-        card.classList.add('border-emerald-500');
-        banner.className = 'p-5 flex items-start gap-3.5 bg-emerald-50 text-emerald-950';
-        iconBox.className = 'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-emerald-600 text-white';
-        iconBox.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
-        titleEl.textContent = '✓ AUTHENTIC — Cryptographic Signature Verified';
-        titleEl.className = 'text-base sm:text-lg font-extrabold tracking-tight text-emerald-900';
-        subEl.textContent = reasonMessage + ' (Permanent • No Expiration Date)';
-        subEl.className = 'text-xs mt-1 leading-relaxed text-emerald-800';
-      } else {
-        card.classList.add('border-rose-500');
-        banner.className = 'p-5 flex items-start gap-3.5 bg-rose-50 text-rose-950';
-        iconBox.className = 'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-rose-600 text-white';
-        iconBox.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
-        titleEl.textContent = '✕ NOT AUTHENTIC / TAMPERED';
-        titleEl.className = 'text-base sm:text-lg font-extrabold tracking-tight text-rose-900';
-        subEl.textContent = reasonMessage;
-        subEl.className = 'text-xs mt-1 leading-relaxed text-rose-800';
-      }
-
-      if (receiptData && typeof receiptData === 'object') {
-        detailsBox.classList.remove('hidden');
-        document.getElementById('v-inv-id').textContent = receiptData.id || 'Unknown';
-        document.getElementById('v-inv-date').textContent = receiptData.dt || '—';
-        document.getElementById('v-inv-merchant').textContent = receiptData.m || 'Unspecified Issuer';
-
-        const cur = receiptData.c || receiptData.cur || 'USD';
-        const tbody = document.getElementById('v-items-tbody');
-        tbody.innerHTML = '';
-        let computedTotal = 0;
-
-        const rawItems = Array.isArray(receiptData.i)
-          ? receiptData.i
-          : (Array.isArray(receiptData.items) ? receiptData.items : []);
-
-        rawItems.forEach((item) => {
-          const name = Array.isArray(item) ? item[0] : (item.name || 'Item');
-          const qty = Number(Array.isArray(item) ? item[1] : item.qty) || 0;
-          const price = Number(Array.isArray(item) ? item[2] : item.price) || 0;
-          const total = Math.round(qty * price * 100) / 100;
-          computedTotal += total;
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="px-3.5 py-2.5 font-medium text-slate-800">${escapeHtml(String(name))}</td>
-            <td class="px-3.5 py-2.5 text-right font-mono text-slate-600">${qty}</td>
-            <td class="px-3.5 py-2.5 text-right font-mono text-slate-600">${formatNumber(price)}</td>
-            <td class="px-3.5 py-2.5 text-right font-mono font-semibold text-slate-900">${formatNumber(total)}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        const displayTotal = typeof receiptData.t === 'number' ? receiptData.t : computedTotal;
-        document.getElementById('v-grand-total').textContent = `${formatNumber(displayTotal)} ${cur}`;
-      } else {
-        detailsBox.classList.add('hidden');
-      }
-    }
-
-    function getVaultReceipts() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEYS.VAULT);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function saveReceiptToVault(envelope, sourceLabel, initialValid) {
-      const vault = getVaultReceipts();
-      const rawJson = JSON.stringify(envelope);
-
-      const existingIdx = vault.findIndex((entry) => entry.rawJson === rawJson);
-      const record = {
-        uid: existingIdx >= 0 ? vault[existingIdx].uid : 'rcpt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-        savedAt: new Date().toISOString(),
-        source: sourceLabel,
-        lastKnownValid: initialValid,
-        envelope,
-        rawJson,
-      };
-
-      if (existingIdx >= 0) {
-        vault.splice(existingIdx, 1);
-      }
-      vault.unshift(record);
-      localStorage.setItem(STORAGE_KEYS.VAULT, JSON.stringify(vault));
-      updateVaultBadgeCount();
-      renderVaultList();
-    }
-
-    function updateVaultBadgeCount() {
-      const count = getVaultReceipts().length;
-      document.getElementById('vault-count-badge').textContent = count;
-    }
-
-    function renderVaultList() {
-      const vault = getVaultReceipts();
-      updateVaultBadgeCount();
-
-      const emptyEl = document.getElementById('vault-empty-state');
-      const gridEl = document.getElementById('vault-list-grid');
-
-      if (vault.length === 0) {
-        emptyEl.classList.remove('hidden');
-        gridEl.innerHTML = '';
-        return;
-      }
-
-      emptyEl.classList.add('hidden');
-      gridEl.innerHTML = vault
-        .map((rec) => {
-          const d = rec.envelope?.d || {};
-          const cur = d.c || d.cur || 'USD';
-          const items = Array.isArray(d.i) ? d.i : (Array.isArray(d.items) ? d.items : []);
-          const computedTotal = items.reduce((acc, it) => acc + (Number(it[1]) || 0) * (Number(it[2]) || 0), 0);
-          const total = typeof d.t === 'number' ? d.t : computedTotal;
-
-          const badgeClass = rec.lastKnownValid
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            : 'bg-rose-50 text-rose-700 border-rose-200';
-          const badgeText = rec.lastKnownValid ? '✓ Authentic' : '✕ Tampered / Invalid';
-
-          return `
-            <div onclick="openVaultReceiptModal('${rec.uid}')" class="group cursor-pointer rounded-2xl border border-slate-200 hover:border-indigo-400 bg-white p-4 shadow-2xs hover:shadow-md transition flex flex-col justify-between space-y-3">
-              <div class="space-y-2">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold border ${badgeClass}">${badgeText}</span>
-                  <span class="text-[11px] font-medium text-slate-400">${escapeHtml(rec.source)}</span>
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold font-mono text-slate-900 group-hover:text-indigo-600 transition break-all">${escapeHtml(d.id || 'Unknown ID')}</h3>
-                  <p class="text-xs text-slate-500 truncate">${escapeHtml(d.m || 'Unspecified Merchant')} • ${escapeHtml(d.dt || '')}</p>
-                </div>
-              </div>
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-xs text-slate-500">${items.length} item${items.length === 1 ? '' : 's'}</span>
-                <span class="text-sm font-extrabold font-mono text-slate-900">${formatNumber(total)} ${escapeHtml(cur)}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    async function openVaultReceiptModal(uid) {
-      const vault = getVaultReceipts();
-      const rec = vault.find((r) => r.uid === uid);
-      if (!rec) return;
-
-      appState.activeModalReceiptId = uid;
-      const d = rec.envelope?.d || {};
-      const cur = d.c || d.cur || 'USD';
-
-      const liveCheck = await verifyReceiptEnvelope(rec.envelope);
-      if (rec.lastKnownValid !== liveCheck.valid) {
-        rec.lastKnownValid = liveCheck.valid;
-        localStorage.setItem(STORAGE_KEYS.VAULT, JSON.stringify(vault));
-        renderVaultList();
-      }
-
-      const banner = document.getElementById('modal-verify-banner');
-      const icon = document.getElementById('modal-verify-icon');
-      const title = document.getElementById('modal-verify-title');
-      const desc = document.getElementById('modal-verify-desc');
-
-      if (liveCheck.valid) {
-        banner.className = 'p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-950 flex items-center gap-3';
-        icon.className = 'w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0';
-        icon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
-        title.textContent = '✓ LIVE VERIFICATION PASSED — AUTHENTIC';
-        title.className = 'text-sm font-extrabold text-emerald-900';
-        desc.textContent = liveCheck.reason;
-        desc.className = 'text-xs mt-0.5 text-emerald-800';
-      } else {
-        banner.className = 'p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-950 flex items-center gap-3';
-        icon.className = 'w-9 h-9 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0';
-        icon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
-        title.textContent = '✕ LIVE VERIFICATION FAILED — NOT AUTHENTIC / TAMPERED';
-        title.className = 'text-sm font-extrabold text-rose-900';
-        desc.textContent = liveCheck.reason;
-        desc.className = 'text-xs mt-0.5 text-rose-800';
-      }
-
-      document.getElementById('modal-inv-id').textContent = d.id || '—';
-      document.getElementById('modal-inv-date').textContent = d.dt || '—';
-      document.getElementById('modal-inv-merchant').textContent = d.m || 'Unspecified Merchant';
-      document.getElementById('modal-raw-json').textContent = rec.rawJson;
-
-      const tbody = document.getElementById('modal-items-tbody');
-      tbody.innerHTML = '';
-      let computedTotal = 0;
-      const items = Array.isArray(d.i) ? d.i : (Array.isArray(d.items) ? d.items : []);
-      items.forEach((it) => {
-        const qty = Number(it[1]) || 0;
-        const price = Number(it[2]) || 0;
-        const lineTotal = Math.round(qty * price * 100) / 100;
-        computedTotal += lineTotal;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="px-3.5 py-2 font-medium text-slate-800">${escapeHtml(String(it[0]))}</td>
-          <td class="px-3.5 py-2 text-right font-mono text-slate-600">${qty}</td>
-          <td class="px-3.5 py-2 text-right font-mono text-slate-600">${formatNumber(price)}</td>
-          <td class="px-3.5 py-2 text-right font-mono font-semibold text-slate-900">${formatNumber(lineTotal)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      const displayTotal = typeof d.t === 'number' ? d.t : computedTotal;
-      document.getElementById('modal-grand-total').textContent = `${formatNumber(displayTotal)} ${cur}`;
-
-      try {
-        const qrLib = await ensureQRCodeLibrary();
-        const modalCanvas = document.getElementById('modal-qr-canvas');
-        await qrLib.toCanvas(modalCanvas, rec.rawJson, {
-          width: 240,
-          margin: 2,
-          errorCorrectionLevel: 'M',
-          color: { dark: '#0f172a', light: '#ffffff' },
-        });
-        const modalImg = document.getElementById('modal-qr-img');
-        if (modalImg) {
-          modalImg.src = modalCanvas.toDataURL('image/png');
-        }
-      } catch (e) {
-        console.warn('Modal QR render warning:', e);
-      }
-
-      document.getElementById('modal-delete-btn').onclick = () => deleteVaultReceipt(uid);
-      document.getElementById('vault-modal').classList.remove('hidden');
-    }
-
-    function closeVaultModal() {
-      document.getElementById('vault-modal').classList.add('hidden');
-      appState.activeModalReceiptId = null;
-    }
-
-    async function downloadModalQR() {
-      const canvas = document.getElementById('modal-qr-canvas');
-      const invId = document.getElementById('modal-inv-id').textContent || 'receipt';
-      await saveCanvasAsPngCrossPlatform(canvas, `ReceiptSeal_${invId.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`);
-    }
-
-    function deleteVaultReceipt(uid) {
-      const vault = getVaultReceipts().filter((r) => r.uid !== uid);
-      localStorage.setItem(STORAGE_KEYS.VAULT, JSON.stringify(vault));
-      closeVaultModal();
-      renderVaultList();
-      showToast('Receipt deleted from local storage.', 'info');
-    }
-
-    function clearAllVaultReceipts() {
-      const vault = getVaultReceipts();
-      if (vault.length === 0) {
-        showToast('Vault is already empty.', 'info');
-        return;
-      }
-      localStorage.removeItem(STORAGE_KEYS.VAULT);
-      renderVaultList();
-      showToast('All saved receipts cleared from local storage.', 'info');
-    }
-
-    function formatNumber(num) {
-      return Number(num || 0).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    function copyTextById(elementId, label) {
-      const el = document.getElementById(elementId);
-      if (!el || !el.value) return;
-      copyRawStringToClipboard(el.value, label);
-    }
-
-    function copyRawStringToClipboard(text, label = 'Text') {
-      const temp = document.createElement('textarea');
-      temp.value = text;
-      temp.style.position = 'fixed';
-      temp.style.opacity = '0';
-      document.body.appendChild(temp);
-      temp.select();
-      try {
-        document.execCommand('copy');
-        showToast(`${label} copied to clipboard!`, 'success');
-      } catch (e) {
-        showToast('Copy failed. Please copy manually.', 'error');
-      }
-      document.body.removeChild(temp);
-    }
-
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-      const toast = document.createElement('div');
-      const styles = {
-        success: 'bg-emerald-900 text-white border-emerald-700',
-        error: 'bg-rose-900 text-white border-rose-700',
-        info: 'bg-slate-900 text-white border-slate-700',
-      };
-      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-lg text-xs font-medium flex items-center justify-between gap-3 transition-all duration-200 ${styles[type] || styles.info}`;
-      toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-2');
-        setTimeout(() => toast.remove(), 220);
-      }, 3200);
-    }
-
-    window.addEventListener('DOMContentLoaded', async () => {
-      try {
-        resetIssueForm();
-        updateVaultBadgeCount();
-        renderVaultList();
-        await initializeCryptoKeys();
-      } catch (err) {
-        console.error('ReceiptSeal startup error:', err);
-        showToast('Startup notice: ' + err.message, 'error');
-      }
-    });
-  </script>
+  }
+  res.status='bad';
+  res.tried=keys.length;
+  return res;
+}
+
+function showResult(text,r){
+  const el=$('res');
+  el.style.display='block';
+  const map={
+    ok:['ok','✔ AUTHENTIC','Signature verified with stored public key “'+(r.key&&r.key.name)+'”.'],
+    bad:['bad','✘ NOT AUTHENTIC','The signature does not match any stored public key. The content may be forged or altered.'],
+    nosig:['bad','✘ NOT AUTHENTIC','No recognizable ECDSA signature was found in this QR code.'],
+    nokeys:['warn','⚠ CANNOT VERIFY','No public keys stored. Add the issuer public key in the Public Keys tab.']
+  };
+  const m=map[r.status];
+  el.className='res '+m[0];el.style.display='block';
+  $('resTitle').textContent=m[1];
+  $('resSub').textContent=m[2]+(r.tried?' Tried '+r.tried+' stored key(s).':'');
+  $('detail').classList.remove('hid');
+  $('content').textContent=r.content;
+  $('matched').textContent=r.key?(r.key.name+'\n'+r.key.fp):'None';
+  $('raw').textContent=text;
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+async function handle(text){
+  $('scanMsg').textContent='QR detected. Verifying…';
+  try{showResult(text,await verify(text));$('scanMsg').textContent='Done.'}
+  catch(e){$('scanMsg').textContent='Verification error: '+e.message}
+}
+
+const cv=$('cv'),cx=cv.getContext('2d',{willReadFrequently:true});
+let bd=null;
+try{if('BarcodeDetector' in window)bd=new BarcodeDetector({formats:['qr_code']})}catch(e){bd=null}
+async function detect(){
+  if(bd){try{const r=await bd.detect(cv);if(r.length&&r[0].rawValue)return r[0].rawValue}catch(e){}}
+  if(window.jsQR){
+    const img=cx.getImageData(0,0,cv.width,cv.height);
+    const r=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+    if(r&&r.data)return r.data;
+  }
+  return null;
+}
+async function decodeImage(src){
+  const img=new Image();
+  await new Promise((ok,no)=>{img.onload=ok;img.onerror=()=>no(new Error('Image could not be loaded'));img.src=src});
+  for(const max of [1600,1000,600,2400]){
+    const sc=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    cv.width=Math.max(1,Math.round(img.naturalWidth*sc));
+    cv.height=Math.max(1,Math.round(img.naturalHeight*sc));
+    cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
+    cx.drawImage(img,0,0,cv.width,cv.height);
+    const r=await detect();
+    if(r)return r;
+  }
+  return null;
+}
+async function fromFile(f){
+  if(!f)return;
+  $('scanMsg').textContent='Reading image…';
+  const url=URL.createObjectURL(f);
+  try{
+    const t=await decodeImage(url);
+    if(t)await handle(t);else $('scanMsg').textContent='No QR code found in this image.';
+  }catch(e){$('scanMsg').textContent=e.message}
+  URL.revokeObjectURL(url);
+}
+
+async function startCam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+  }catch(e){
+    $('scanMsg').textContent='Camera unavailable: '+e.message+'. Use Upload Image instead.';
+    return;
+  }
+  const v=$('video');v.srcObject=stream;await v.play();
+  $('vid').style.display='block';
+  $('camBtn').textContent='Stop Camera';
+  $('scanMsg').textContent='Point the camera at a QR code.';
+  tick();
+}
+function stopCam(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  $('vid').style.display='none';
+  $('camBtn').textContent='Start Camera';
+}
+async function tick(){
+  if(!stream)return;
+  const v=$('video');
+  if(v.readyState>=2&&v.videoWidth){
+    const sc=Math.min(1,900/Math.max(v.videoWidth,v.videoHeight));
+    cv.width=Math.round(v.videoWidth*sc);cv.height=Math.round(v.videoHeight*sc);
+    cx.drawImage(v,0,0,cv.width,cv.height);
+    const r=await detect();
+    if(r){stopCam();handle(r);return}
+  }
+  setTimeout(tick,120);
+}
+
+$('camBtn').onclick=()=>stream?stopCam():startCam();
+$('imgIn').onchange=async e=>{const f=e.target.files[0];try{await fromFile(f)}finally{e.target.value=''}};
+$('manualBtn').onclick=()=>{const t=$('manual').value.trim();if(t)handle(t)};
+const drop=$('drop');
+['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('h')}));
+['dragleave','drop'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove('h')}));
+['dragover','drop'].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));
+document.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)fromFile(f)});
+document.addEventListener('paste',e=>{
+  const items=e.clipboardData&&e.clipboardData.items;
+  if(!items)return;
+  for(const it of items){if(it.type.startsWith('image/')){fromFile(it.getAsFile());break}}
+});
+
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  $('tab-scan').classList.toggle('hid',b.dataset.tab!=='scan');
+  $('tab-keys').classList.toggle('hid',b.dataset.tab!=='keys');
+  if(b.dataset.tab!=='scan')stopCam();
+});
+
+function note(id,t,bad){const e=$(id);e.textContent=t;e.style.color=bad?'var(--bad)':'var(--ok)'}
+$('addKey').onclick=async()=>{
+  try{
+    const k=await addKeyFrom($('kname').value.trim(),$('kpem').value);
+    $('kname').value='';$('kpem').value='';
+    renderKeys();note('keyMsg','Saved “'+k.name+'” ('+k.fp+').');
+  }catch(e){note('keyMsg',e.message,true)}
+};
+$('pemFile').onchange=async e=>{
+  const f=e.target.files[0];
+  if(!f)return;
+  $('kpem').value=await f.text();e.target.value='';
+  if(!$('kname').value)$('kname').value=f.name.replace(/\.[^.]+$/,'');
+};
+$('expBtn').onclick=()=>{
+  const data=JSON.stringify({type:'ecdsa-p256-public-keys',version:1,exported:new Date().toISOString(),keys:keys.map(({name,pem,fp,added})=>({name,pem,fp,added}))},null,2);
+  $('exp').value=data;
+  try{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+    a.download='public-keys-backup.json';
+    document.body.appendChild(a);a.click();a.remove();
+  }catch(e){}
+  note('expMsg',keys.length+' key(s) exported. Copy the text if no download starts.');
+};
+$('copyBtn').onclick=async()=>{
+  const t=$('exp').value;
+  if(!t){note('expMsg','Nothing to copy. Press Export All first.',true);return}
+  try{await navigator.clipboard.writeText(t)}catch(e){$('exp').select();document.execCommand('copy')}
+  note('expMsg','Copied.');
+};
+async function importText(t){
+  let j;
+  try{j=JSON.parse(t)}catch(e){throw new Error('Invalid JSON backup.')}
+  const arr=Array.isArray(j)?j:j.keys;
+  if(!Array.isArray(arr))throw new Error('No keys found in backup.');
+  let n=0,skip=0;
+  for(const k of arr){
+    try{await addKeyFrom(k.name,k.pem||k.key||'');n++}catch(e){skip++}
+  }
+  renderKeys();
+  note('expMsg','Imported '+n+' key(s), skipped '+skip+' (duplicate or invalid).',n===0&&skip>0);
+}
+$('impBtn').onclick=async()=>{try{await importText($('exp').value)}catch(e){note('expMsg',e.message,true)}};
+$('jsonFile').onchange=async e=>{
+  const f=e.target.files[0];
+  if(!f)return;
+  const t=await f.text();e.target.value='';$('exp').value=t;
+  try{await importText(t)}catch(err){note('expMsg',err.message,true)}
+};
+
+renderKeys();
+if(!window.crypto||!crypto.subtle)$('scanMsg').textContent='Secure context required for signature verification.';
+</script>
 </body>
 </html>
