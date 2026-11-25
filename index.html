@@ -287,7 +287,14 @@ function parseReceipt(d){
   const mask=u8();
   for(let bit=0;bit<4;bit++)if(mask&(1<<bit))r.extras.push([LBL[bit],str()]);
   r.total=vi();
-  if(i!==d.length)throw 0;
+  r.notes=[];
+  const rest=[];
+  while(i<d.length){
+    const n=d[i];
+    if(n>=1&&i+1+n<=d.length&&d.slice(i+1,i+1+n).every(c=>c>=0x20)){r.notes.push(mm(d.slice(i+1,i+1+n)));i+=1+n}
+    else{rest.push(d[i].toString(16).padStart(2,'0'));i++}
+  }
+  r.rest=rest.join(' ');
   return r;
 }
 function mmWords(n){
@@ -417,6 +424,8 @@ function buildReceipt(rc,trusted){
     c.append(b);
   }
   c.append(el('hr'),row('စုစုပေါင်း ကျသင့်ငွေ',fmt(rc.total)+' ကျပ်','big'),el('div','words',mmWords(rc.total)));
+  (rc.notes||[]).forEach(t=>c.append(el('div','sub',/^မှတ်ချက်/.test(t)?t:'မှတ်ချက်: '+t)));
+  if(rc.rest)c.append(el('div','sub','Extra data not recognised: '+rc.rest));
   return c;
 }
 function showResult(r){
