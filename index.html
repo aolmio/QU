@@ -43,7 +43,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .ban.bad{background:var(--badbg);border-color:var(--bad);color:var(--bad)}.ban.bad .ic{background:var(--bad)}
 .ban.warn{background:var(--warnbg);border-color:var(--warn);color:var(--warn)}.ban.warn .ic{background:var(--warn)}
 .rc{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px}
-.rc.un{border:2px dashed var(--bad);opacity:.78}
+.rc.un{border:2px solid var(--bad)}
 .rw{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:5px 0}
 .rw .l{color:var(--muted)}
 .rw .v,.rw b{font-weight:700;text-align:right}
@@ -53,12 +53,9 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .it .nm{font-weight:600}
 .sub{color:var(--muted);font-size:13px;padding-bottom:4px}
 .box{background:var(--okbg);border-radius:14px;padding:12px 14px;margin:10px 0}
-.un .box{background:var(--badbg)}
 .bt{color:var(--ok);font-weight:700;font-size:13px;margin-bottom:4px}
-.un .bt{color:var(--bad)}
 .big .l,.big{font-size:16px}
 .big .v{color:var(--ok);font-size:22px}
-.un .big .v{color:var(--bad)}
 .words{text-align:right;color:var(--muted);font-size:14px}
 pre{margin:0;background:var(--card2);color:var(--text);border-radius:12px;padding:12px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;max-height:240px;overflow:auto}
 details{margin-top:8px}
@@ -271,7 +268,11 @@ function b45(s){
 async function inflateRaw(u){
   const ds=new DecompressionStream('deflate-raw');
   const w=ds.writable.getWriter();w.write(u).catch(()=>{});w.close().catch(()=>{});
-  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+  const rd=ds.readable.getReader(),ch=[];let len=0;
+  try{for(;;){const x=await rd.read();if(x.done)break;ch.push(x.value);len+=x.value.length}}catch(e){if(!len)throw e}
+  const o=new Uint8Array(len);let p=0;
+  for(const c of ch){o.set(c,p);p+=c.length}
+  return o;
 }
 const mm=a=>Array.from(a,c=>c>=0x80?String.fromCharCode(0x1000+c-0x80):String.fromCharCode(c)).join('');
 const LBL=['ပေါက်ဈေး','လျော့တွက်','လက်ခ','ကျောက်ဖိုး'];
@@ -280,13 +281,15 @@ function parseReceipt(d){
   const u8=()=>{if(i>=d.length)throw 0;return d[i++]};
   const vi=()=>{let v=0,s=0,b;do{b=u8();v+=(b&127)*2**s;s+=7}while(b&128);return v};
   const str=()=>{const n=u8();if(i+n>d.length)throw 0;const s=d.slice(i,i+n);i+=n;return mm(s)};
-  const r={items:[],extras:[]};
-  r.ver=u8();r.flag=u8();r.inv=str();r.date=str();
-  const n=u8();
-  for(let k=0;k<n;k++){const q=u8();const name=str();const detail=str();const price=vi();r.items.push({q,name,detail,price})}
-  const mask=u8();
-  for(let bit=0;bit<4;bit++)if(mask&(1<<bit))r.extras.push([LBL[bit],str()]);
-  r.total=vi();
+  const r={items:[],extras:[],inv:'—',date:'—',total:null,partial:false};
+  try{
+    r.ver=u8();r.flag=u8();r.inv=str();r.date=str();
+    const n=u8();
+    for(let k=0;k<n;k++){const q=u8();const name=str();const detail=str();const price=vi();r.items.push({q,name,detail,price})}
+    const mask=u8();
+    for(let bit=0;bit<4;bit++)if(mask&(1<<bit))r.extras.push([LBL[bit],str()]);
+    r.total=vi();
+  }catch(e){r.partial=true}
   r.notes=[];
   const rest=[];
   while(i<d.length){
@@ -295,6 +298,7 @@ function parseReceipt(d){
     else{rest.push(d[i].toString(16).padStart(2,'0'));i++}
   }
   r.rest=rest.join(' ');
+  if(r.inv==='—'&&!r.items.length&&r.total===null)return null;
   return r;
 }
 function mmWords(n){
@@ -376,13 +380,15 @@ async function analyzeSV(t){
   const r={kind:'receipt',status:'bad',key:null,raw:t,receipt:null,dump:'',note:''};
   const b=b45(t.replace(/^SV\d+:/,''));
   if(!b||b.length<70){r.note='The QR payload is damaged or incomplete.';return r}
-  const len=(b[2]<<8)|b[3];
-  if(4+len+60>b.length){r.note='The QR payload is damaged or incomplete.';return r}
+  let len=(b[2]<<8)|b[3];
+  if(4+len+64!==b.length)len=b.length-68;
+  if(len<1){r.note='The QR payload is damaged or incomplete.';return r}
   const pay=b.slice(4,4+len);
   const sig=b.slice(4+len);
   let d=pay;
-  if(b[1]&1){try{d=await inflateRaw(pay)}catch(e){r.note='The receipt data could not be unpacked.';return r}}
-  try{r.receipt=parseReceipt(d)}catch(e){r.dump=mm(d).replace(/[\x00-\x1f]/g,'·')}
+  if(b[1]&1){try{d=await inflateRaw(pay)}catch(e){r.note='The receipt data could not be fully unpacked.'}}
+  r.receipt=parseReceipt(d);
+  if(!r.receipt)r.dump=mm(d).replace(/[\x00-\x1f]/g,'·');
   if(!keys.length){r.status='nokeys';return r}
   const sg=sig.length===64?sig:derToRaw(sig);
   if(sg){
@@ -423,7 +429,9 @@ function buildReceipt(rc,trusted){
     rc.extras.forEach(x=>b.append(row(x[0]+' (QR Only):',x[1])));
     c.append(b);
   }
-  c.append(el('hr'),row('စုစုပေါင်း ကျသင့်ငွေ',fmt(rc.total)+' ကျပ်','big'),el('div','words',mmWords(rc.total)));
+  c.append(el('hr'),row('စုစုပေါင်း ကျသင့်ငွေ',rc.total===null?'—':fmt(rc.total)+' ကျပ်','big'));
+  if(rc.total!==null)c.append(el('div','words',mmWords(rc.total)));
+  if(rc.partial)c.append(el('div','sub','Some fields could not be read. The QR data is damaged or altered.'));
   (rc.notes||[]).forEach(t=>c.append(el('div','sub',/^မှတ်ချက်/.test(t)?t:'မှတ်ချက်: '+t)));
   if(rc.rest)c.append(el('div','sub','Extra data not recognised: '+rc.rest));
   return c;
