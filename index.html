@@ -3,57 +3,78 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ECDSA QR Verifier</title>
+<title>QR Receipt Verifier</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;600;700&display=swap">
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f7f5;--card:#fff;--card2:#eef3ef;--text:#14201a;--muted:#5b6b62;--accent:#2f9e63;--accent-text:#fff;--border:#cfdcd3;--ok:#1a8f4f;--okbg:#dff5e8;--bad:#c0392b;--badbg:#fbe4e1;--warn:#a6700a;--warnbg:#fdf0d2}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1210;--card:#18211d;--card2:#212c27;--text:#e8f1ec;--muted:#92a49a;--accent:#72c48d;--accent-text:#0b1a12;--border:#2c4a3b;--ok:#72c48d;--okbg:#18372a;--bad:#ff8a7a;--badbg:#3a1d1a;--warn:#f0c15a;--warnbg:#3a2f12}}
-:root[data-theme="dark"]{--bg:#0d1210;--card:#18211d;--card2:#212c27;--text:#e8f1ec;--muted:#92a49a;--accent:#72c48d;--accent-text:#0b1a12;--border:#2c4a3b;--ok:#72c48d;--okbg:#18372a;--bad:#ff8a7a;--badbg:#3a1d1a;--warn:#f0c15a;--warnbg:#3a2f12}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f7f4;--card:#fff;--card2:#eaf1ec;--text:#14201a;--muted:#5d6e64;--accent:#2f9e63;--onacc:#fff;--border:#d3dfd6;--ok:#157f45;--okbg:#dff5e8;--bad:#c0392b;--badbg:#fbe4e1;--warn:#9a6a08;--warnbg:#fdf0d2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c110f;--card:#161f1b;--card2:#1f2b26;--text:#e8f1ec;--muted:#93a69b;--accent:#72c48d;--onacc:#0b1a12;--border:#2b4639;--ok:#72c48d;--okbg:#163a29;--bad:#ff8c7c;--badbg:#3b1d1a;--warn:#f0c15a;--warnbg:#3a2f12}}
+:root[data-theme="dark"]{--bg:#0c110f;--card:#161f1b;--card2:#1f2b26;--text:#e8f1ec;--muted:#93a69b;--accent:#72c48d;--onacc:#0b1a12;--border:#2b4639;--ok:#72c48d;--okbg:#163a29;--bad:#ff8c7c;--badbg:#3b1d1a;--warn:#f0c15a;--warnbg:#3a2f12}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:640px;margin:0 auto;padding:16px}
-h1{font-size:19px;margin:0 0 2px}
-.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "Noto Sans Myanmar","Myanmar Text",Padauk,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:620px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0}
+.sub0{color:var(--muted);font-size:13px;margin:2px 0 14px}
 .tabs{display:flex;gap:6px;background:var(--card2);padding:5px;border-radius:14px;margin-bottom:14px}
 .tabs button{flex:1;border:0;background:none;color:var(--muted);padding:10px;border-radius:10px;font:600 14px inherit;font-family:inherit;cursor:pointer}
-.tabs button.on{background:var(--accent);color:var(--accent-text)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px}
+.tabs button.on{background:var(--accent);color:var(--onacc)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:14px}
 .row{display:flex;gap:8px;flex-wrap:wrap}
-button.b,label.b{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-text);padding:11px 14px;border-radius:12px;font:600 14px inherit;font-family:inherit;cursor:pointer;flex:1;min-width:120px;text-align:center}
-button.b.o,label.b.o{background:none;color:var(--accent)}
-button.b.d{border-color:var(--bad);color:var(--bad);background:none;flex:0;min-width:0;padding:7px 11px}
+.b{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--accent);background:var(--accent);color:var(--onacc);padding:12px 14px;border-radius:12px;font:600 14px inherit;font-family:inherit;cursor:pointer;flex:1;min-width:130px;text-align:center}
+.b.o{background:none;color:var(--accent)}
+.b.d{border-color:var(--bad);color:var(--bad);background:none;flex:0;min-width:0;padding:7px 11px}
 input[type=text],textarea{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:11px;font:13px ui-monospace,Menlo,Consolas,monospace;margin-bottom:8px}
 input[type=text]{font-family:inherit;font-size:15px}
-textarea{min-height:120px;resize:vertical}
+textarea{min-height:110px;resize:vertical}
 input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .vid{position:relative;border-radius:14px;overflow:hidden;background:#000;display:none;margin-bottom:10px;aspect-ratio:1/1}
 .vid video{width:100%;height:100%;object-fit:cover}
-.vid i{position:absolute;inset:18%;border:3px solid #72c48d;border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
-.drop{border:2px dashed var(--border);border-radius:14px;padding:16px;text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+.vid i{position:absolute;inset:14%;border:3px solid #72c48d;border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.vid .b{position:absolute;right:8px;bottom:8px;flex:0;min-width:0;padding:8px 12px;background:rgba(0,0,0,.6);color:#fff;border-color:#fff}
+.drop{display:block;border:2px dashed var(--border);border-radius:14px;padding:18px;text-align:center;color:var(--muted);font-size:13px;margin-top:10px;cursor:pointer}
 .drop.h{border-color:var(--accent);color:var(--accent)}
+.prev{display:block;max-width:100%;max-height:160px;margin:10px auto 0;border-radius:10px;border:1px solid var(--border)}
 .msg{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
-.res{border-radius:16px;padding:16px;margin-bottom:14px;display:none}
-.res.ok{background:var(--okbg);color:var(--ok);border:1px solid var(--ok)}
-.res.bad{background:var(--badbg);color:var(--bad);border:1px solid var(--bad)}
-.res.warn{background:var(--warnbg);color:var(--warn);border:1px solid var(--warn)}
-.res h2{margin:0 0 4px;font-size:20px}
-.res p{margin:0;font-size:13px;color:var(--text)}
+.ban{border-radius:18px;padding:16px;margin-bottom:12px;display:flex;gap:14px;align-items:center;border:1.5px solid}
+.ban .ic{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:800;color:#fff}
+.ban h2{margin:0;font-size:20px;letter-spacing:.02em}
+.ban p{margin:2px 0 0;font-size:13px;color:var(--text)}
+.ban.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok)}.ban.ok .ic{background:var(--ok)}
+.ban.bad{background:var(--badbg);border-color:var(--bad);color:var(--bad)}.ban.bad .ic{background:var(--bad)}
+.ban.warn{background:var(--warnbg);border-color:var(--warn);color:var(--warn)}.ban.warn .ic{background:var(--warn)}
+.rc{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px}
+.rc.un{border:2px dashed var(--bad);opacity:.78}
+.rw{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:5px 0}
+.rw .l{color:var(--muted)}
+.rw .v,.rw b{font-weight:700;text-align:right}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em}
+.rc hr{border:0;border-top:1px solid var(--border);margin:10px 0}
+.sec{color:var(--accent);font-weight:700;margin:6px 0}
+.it .nm{font-weight:600}
+.sub{color:var(--muted);font-size:13px;padding-bottom:4px}
+.box{background:var(--okbg);border-radius:14px;padding:12px 14px;margin:10px 0}
+.un .box{background:var(--badbg)}
+.bt{color:var(--ok);font-weight:700;font-size:13px;margin-bottom:4px}
+.un .bt{color:var(--bad)}
+.big .l,.big{font-size:16px}
+.big .v{color:var(--ok);font-size:22px}
+.un .big .v{color:var(--bad)}
+.words{text-align:right;color:var(--muted);font-size:14px}
+pre{margin:0;background:var(--card2);color:var(--text);border-radius:12px;padding:12px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;max-height:240px;overflow:auto}
+details{margin-top:8px}
+summary{cursor:pointer;color:var(--muted);font-size:13px}
 .lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:12px 0 4px}
-pre{margin:0;background:var(--card2);color:var(--text);border-radius:12px;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto}
 .key{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--card2)}
 .key .t{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.key b{word-break:break-word}
 .fp{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--accent);margin-top:2px}
-.key details{margin-top:6px;font-size:12px;color:var(--muted)}
 .empty{color:var(--muted);text-align:center;padding:12px;font-size:13px}
 .hid{display:none}
-canvas{display:none}
 </style>
 </head>
 <body>
 <main>
-<h1>ECDSA P-256 QR Verifier</h1>
-<p class="sub">Offline signature check · keys stay on this device</p>
+<h1>QR Receipt Verifier</h1>
+<p class="sub0">ECDSA P-256 · works offline · keys stay on this device</p>
 
 <div class="tabs">
 <button class="on" data-tab="scan">Scan</button>
@@ -62,54 +83,42 @@ canvas{display:none}
 
 <section id="tab-scan">
 <div class="card">
-<div class="vid" id="vid"><video id="video" playsinline muted></video><i></i></div>
+<div class="vid" id="vid"><video id="video" playsinline muted></video><i></i><button class="b hid" id="torch">Light</button></div>
 <div class="row">
 <button class="b" id="camBtn">Start Camera</button>
 <label class="b o" for="imgIn">Upload Image</label>
-<input type="file" id="imgIn" accept="image/*">
+<label class="b o" for="camIn">Take Photo</label>
 </div>
-<label class="drop" id="drop" for="imgIn" style="display:block;cursor:pointer">Tap to choose, drop, or paste a QR image here</label>
+<input type="file" id="imgIn" accept="image/*">
+<input type="file" id="camIn" accept="image/*" capture="environment">
+<label class="drop" id="drop" for="imgIn">Tap to choose, drop, or paste a screenshot or photo.<br>Cropped, compressed, extra content around the QR and screen photos are fine.</label>
+<img id="prev" class="prev hid" alt="">
 <div class="msg" id="scanMsg"></div>
-<details style="margin-top:8px">
-<summary style="cursor:pointer;color:var(--muted);font-size:13px">Verify pasted QR text</summary>
+<details>
+<summary>Verify pasted QR text</summary>
 <textarea id="manual" placeholder="Paste QR text content" style="margin-top:8px"></textarea>
 <button class="b o" id="manualBtn" style="width:100%">Verify Text</button>
 </details>
 </div>
-
-<div class="res" id="res">
-<h2 id="resTitle"></h2>
-<p id="resSub"></p>
-</div>
-
-<div class="card hid" id="detail">
-<div class="lbl" style="margin-top:0">Decoded content</div>
-<pre id="content"></pre>
-<div class="lbl">Matched key</div>
-<pre id="matched"></pre>
-<div class="lbl">Raw QR text</div>
-<pre id="raw"></pre>
-</div>
+<div id="out"></div>
 </section>
 
 <section id="tab-keys" class="hid">
 <div class="card">
 <div class="lbl" style="margin-top:0">Add public key</div>
-<input type="text" id="kname" placeholder="Key name (e.g. Shop A issuer)">
+<input type="text" id="kname" placeholder="Key name (e.g. Shop issuer)">
 <textarea id="kpem" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea>
 <div class="row">
 <button class="b" id="addKey">Save Key</button>
 <label class="b o" for="pemFile">Load .pem File</label>
-<input type="file" id="pemFile" accept=".pem,.txt,.pub,.key,text/plain">
 </div>
+<input type="file" id="pemFile" accept=".pem,.txt,.pub,.key,text/plain">
 <div class="msg" id="keyMsg"></div>
 </div>
-
 <div class="card">
 <div class="lbl" style="margin-top:0">Stored keys</div>
 <div id="keyList"></div>
 </div>
-
 <div class="card">
 <div class="lbl" style="margin-top:0">Export / Import all keys</div>
 <textarea id="exp" placeholder="Exported keys JSON appears here. Paste a backup here to import."></textarea>
@@ -118,23 +127,24 @@ canvas{display:none}
 <button class="b o" id="copyBtn">Copy</button>
 <button class="b o" id="impBtn">Import From Text</button>
 <label class="b o" for="jsonFile">Import File</label>
-<input type="file" id="jsonFile" accept=".json,application/json,text/plain">
 </div>
+<input type="file" id="jsonFile" accept=".json,application/json,text/plain">
 <div class="msg" id="expMsg"></div>
 </div>
 </section>
 </main>
-<canvas id="cv"></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const enc=new TextEncoder();
 const STORE='ecdsa_pub_keys_v1';
 let mem=[];
 let keys=loadKeys();
 const cache=new Map();
-let stream=null;
+let stream=null,track=null,busy=false,torchOn=false,frame=0;
 
 function loadKeys(){
   try{const v=localStorage.getItem(STORE);if(v){const a=JSON.parse(v);if(Array.isArray(a))return a}}catch(e){}
@@ -144,8 +154,7 @@ function saveKeys(){
   mem=keys.slice();
   try{localStorage.setItem(STORE,JSON.stringify(keys))}catch(e){}
 }
-
-function hex(b){return Array.from(b,x=>x.toString(16).padStart(2,'0')).join('').toUpperCase()}
+function hex(b){return Array.from(b,x=>x.toString(16).padStart(2,'0')).join('')}
 function strictB64(s){
   if(typeof s!=='string')return null;
   s=s.replace(/\s+/g,'');
@@ -153,7 +162,7 @@ function strictB64(s){
   s=s.replace(/-/g,'+').replace(/_/g,'/').replace(/=+$/,'');
   if(s.length%4===1)return null;
   s+='='.repeat((4-s.length%4)%4);
-  try{const bin=atob(s);const out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}catch(e){return null}
+  try{const bin=atob(s);const o=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)o[i]=bin.charCodeAt(i);return o}catch(e){return null}
 }
 function utf8(b){
   try{const t=new TextDecoder('utf-8',{fatal:true}).decode(b);return /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(t)?null:t}catch(e){return null}
@@ -176,16 +185,14 @@ function derToRaw(b){
   while(r.length>32&&r[0]===0)r=r.slice(1);
   while(s.length>32&&s[0]===0)s=s.slice(1);
   if(r.length>32||s.length>32||!r.length||!s.length)return null;
-  const o=new Uint8Array(64);
-  o.set(r,32-r.length);o.set(s,64-s.length);
+  const o=new Uint8Array(64);o.set(r,32-r.length);o.set(s,64-s.length);
   return o;
 }
 function decodeSig(v){
   if(typeof v!=='string')return null;
   const b=hexBytes(v)||strictB64(v);
   if(!b)return null;
-  if(b.length===64)return b;
-  return derToRaw(b);
+  return b.length===64?b:derToRaw(b);
 }
 function pretty(s){
   let t=s;
@@ -205,26 +212,20 @@ function sortObj(o){
   if(o&&typeof o==='object'){const r={};Object.keys(o).sort().forEach(k=>r[k]=sortObj(o[k]));return r}
   return o;
 }
-const SIGK=['sig','signature','s','sign','sg'];
-const PAYK=['data','payload','p','d','msg','message','content'];
-
-function parse(text,depth){
+function parseGeneric(text){
   const out=[];
   const t=text.trim();
   try{
     const obj=JSON.parse(t);
     if(obj&&typeof obj==='object'&&!Array.isArray(obj)){
-      const sk=SIGK.find(k=>k in obj);
+      const sk=['sig','signature','s','sign','sg'].find(k=>k in obj);
       const sig=sk?decodeSig(obj[sk]):null;
       if(sig){
-        const pk=PAYK.find(k=>k in obj);
+        const pk=['data','payload','p','d','msg','message','content'].find(k=>k in obj);
         if(pk){
           const pv=obj[pk];
-          if(typeof pv==='string'){
-            out.push({sig,msgs:msgsFor(pv),content:pretty(pv)});
-          }else{
-            out.push({sig,msgs:[enc.encode(JSON.stringify(pv)),enc.encode(JSON.stringify(sortObj(pv)))],content:JSON.stringify(pv,null,2)});
-          }
+          if(typeof pv==='string')out.push({sig,msgs:msgsFor(pv),content:pretty(pv)});
+          else out.push({sig,msgs:[enc.encode(JSON.stringify(pv)),enc.encode(JSON.stringify(sortObj(pv)))],content:JSON.stringify(pv,null,2)});
         }
         const rest={...obj};delete rest[sk];
         out.push({sig,msgs:[enc.encode(JSON.stringify(rest)),enc.encode(JSON.stringify(sortObj(rest)))],content:JSON.stringify(rest,null,2)});
@@ -236,98 +237,23 @@ function parse(text,depth){
     if(parts.length<2)continue;
     const sig=decodeSig(parts[parts.length-1]);
     if(!sig)continue;
-    const body=parts.slice(0,-1);
-    const joined=body.join(d);
-    let content=pretty(joined);
-    if(d==='.'&&parts.length===3)content=pretty(parts[1]);
-    out.push({sig,msgs:msgsFor(joined),content});
+    const joined=parts.slice(0,-1).join(d);
+    out.push({sig,msgs:msgsFor(joined),content:(d==='.'&&parts.length===3)?pretty(parts[1]):pretty(joined)});
   }
   const mt=t.match(/[A-Za-z0-9+\/_=-]{86,200}$|[0-9a-fA-F]{128,}$/);
   if(mt){
     const sg=decodeSig(mt[0]);
     if(sg){
       const head=t.slice(0,mt.index);
-      const trimmed=head.replace(/[\s.|~:,;]+$/,'');
-      out.push({sig:sg,msgs:[...msgsFor(trimmed),enc.encode(head)],content:pretty(trimmed)});
+      const tr=head.replace(/[\s.|~:,;]+$/,'');
+      out.push({sig:sg,msgs:[...msgsFor(tr),enc.encode(head)],content:pretty(tr)});
     }
   }
-  const ja=t.indexOf('{'),jz=t.lastIndexOf('}');
-  if(depth<1&&ja>=0&&jz>ja&&(ja>0||jz<t.length-1))out.push(...parse(t.slice(ja,jz+1),depth+1));
-  if(depth<1){
-    const b=strictB64(t);
-    if(b&&t.length>=16){
-      const d=utf8(b);
-      if(d!==null)out.push(...parse(d,depth+1));
-      if(b.length>64){
-        out.push({sig:b.slice(-64),msgs:[b.slice(0,-64)],content:utf8(b.slice(0,-64))??('[binary '+(b.length-64)+' bytes]')});
-        const der=derToRaw(b.slice(-72))||derToRaw(b.slice(-71))||derToRaw(b.slice(-70));
-        if(der){
-          for(const n of [72,71,70]){const r=derToRaw(b.slice(-n));if(r&&b[b.length-n]===0x30){out.push({sig:r,msgs:[b.slice(0,-n)],content:utf8(b.slice(0,-n))??'[binary]'});break}}
-        }
-      }
-    }
+  const b=strictB64(t);
+  if(b&&b.length>64&&t.length>=16){
+    out.push({sig:b.slice(-64),msgs:[b.slice(0,-64)],content:utf8(b.slice(0,-64))??'[binary data]'});
   }
   return out;
-}
-
-function pemToDer(pem){
-  const body=pem.replace(/-----[^-]+-----/g,'').replace(/\s+/g,'');
-  return strictB64(body);
-}
-async function importPub(der){
-  if(der.length===65&&der[0]===4)return crypto.subtle.importKey('raw',der,{name:'ECDSA',namedCurve:'P-256'},true,['verify']);
-  return crypto.subtle.importKey('spki',der,{name:'ECDSA',namedCurve:'P-256'},true,['verify']);
-}
-async function fingerprint(der){
-  const h=new Uint8Array(await crypto.subtle.digest('SHA-256',der));
-  return Array.from(h.slice(0,8),x=>x.toString(16).padStart(2,'0').toUpperCase()).join(':');
-}
-async function keyObj(k){
-  if(cache.has(k.id))return cache.get(k.id);
-  const der=pemToDer(k.pem);
-  const ck=await importPub(der);
-  cache.set(k.id,ck);
-  return ck;
-}
-function toPem(der){
-  let s='';for(const x of der)s+=String.fromCharCode(x);
-  const b=btoa(s).match(/.{1,64}/g).join('\n');
-  return '-----BEGIN PUBLIC KEY-----\n'+b+'\n-----END PUBLIC KEY-----';
-}
-
-async function addKeyFrom(name,pem){
-  const der0=pemToDer(pem);
-  if(!der0)throw new Error('Could not read key. Paste a PEM or Base64 public key.');
-  let ck;
-  try{ck=await importPub(der0)}catch(e){throw new Error('Not a valid ECDSA P-256 public key.')}
-  let spki=der0;
-  if(der0.length===65){spki=new Uint8Array(await crypto.subtle.exportKey('spki',ck))}
-  const fp=await fingerprint(spki);
-  const pemNorm=toPem(spki);
-  if(keys.some(k=>k.pem===pemNorm))throw new Error('This key is already stored.');
-  const k={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name:name||('Key '+(keys.length+1)),pem:pemNorm,fp,added:new Date().toISOString()};
-  keys.push(k);cache.set(k.id,ck);saveKeys();
-  return k;
-}
-
-function renderKeys(){
-  $('kc').textContent='('+keys.length+')';
-  const box=$('keyList');box.textContent='';
-  if(!keys.length){const e=document.createElement('div');e.className='empty';e.textContent='No public keys stored yet.';box.appendChild(e);return}
-  keys.forEach(k=>{
-    const d=document.createElement('div');d.className='key';
-    const t=document.createElement('div');t.className='t';
-    const b=document.createElement('b');b.textContent=k.name;
-    const x=document.createElement('button');x.className='b d';x.textContent='Delete';
-    x.onclick=()=>{if(confirm('Delete "'+k.name+'"?')){keys=keys.filter(z=>z.id!==k.id);cache.delete(k.id);saveKeys();renderKeys()}};
-    t.append(b,x);
-    const f=document.createElement('div');f.className='fp';f.textContent=k.fp;
-    const det=document.createElement('details');
-    const sm=document.createElement('summary');sm.textContent='Show PEM';sm.style.cursor='pointer';
-    const pr=document.createElement('pre');pr.textContent=k.pem;
-    det.append(sm,pr);
-    d.append(t,f,det);box.appendChild(d);
-  });
 }
 
 const B45='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
@@ -344,185 +270,371 @@ function b45(s){
 }
 async function inflateRaw(u){
   const ds=new DecompressionStream('deflate-raw');
-  const w=ds.writable.getWriter();w.write(u);w.close();
+  const w=ds.writable.getWriter();w.write(u).catch(()=>{});w.close().catch(()=>{});
   return new Uint8Array(await new Response(ds.readable).arrayBuffer());
 }
-function readSV(d){
-  const dec=x=>Array.from(x,c=>c>=0x80?String.fromCharCode(0x1000+c-0x80):String.fromCharCode(c)).join('');
-  const out=[];const rest=[];let i=0;
-  while(i<d.length){
-    const n=d[i];
-    if(n>=1&&n<=80&&i+1+n<=d.length){
-      const s=d.slice(i+1,i+1+n);
-      if(s.every(c=>c>=0x20)){out.push(dec(s));i+=1+n;continue}
-    }
-    rest.push(d[i].toString(16).padStart(2,'0'));i++;
-  }
-  return out.join('\n')+(rest.length?'\n\n[other bytes] '+rest.join(' '):'');
+const mm=a=>Array.from(a,c=>c>=0x80?String.fromCharCode(0x1000+c-0x80):String.fromCharCode(c)).join('');
+const LBL=['ပေါက်ဈေး','လျော့တွက်','လက်ခ','ကျောက်ဖိုး'];
+function parseReceipt(d){
+  let i=0;
+  const u8=()=>{if(i>=d.length)throw 0;return d[i++]};
+  const vi=()=>{let v=0,s=0,b;do{b=u8();v+=(b&127)*2**s;s+=7}while(b&128);return v};
+  const str=()=>{const n=u8();if(i+n>d.length)throw 0;const s=d.slice(i,i+n);i+=n;return mm(s)};
+  const r={items:[],extras:[]};
+  r.ver=u8();r.flag=u8();r.inv=str();r.date=str();
+  const n=u8();
+  for(let k=0;k<n;k++){const q=u8();const name=str();const detail=str();const price=vi();r.items.push({q,name,detail,price})}
+  const mask=u8();
+  for(let bit=0;bit<4;bit++)if(mask&(1<<bit))r.extras.push([LBL[bit],str()]);
+  r.total=vi();
+  if(i!==d.length)throw 0;
+  return r;
 }
-async function verifySV2(text){
-  const t=text.trim();
-  if(!/^SV\d+:/.test(t))return null;
-  const b=b45(t.replace(/^SV\d+:/,''));
-  if(!b||b.length<70)return null;
-  const len=(b[2]<<8)|b[3];
-  const pay=b.slice(4,4+len);
-  const sig=b.slice(4+len);
-  let d=pay;
-  if(b[1]&1){try{d=await inflateRaw(pay)}catch(e){return null}}
-  const res={status:'',key:null,content:readSV(d)};
-  if(!keys.length){res.status='nokeys';return res}
-  const sg=sig.length===64?sig:derToRaw(sig);
-  if(sg){
-    for(const k of keys){
-      let ck;try{ck=await keyObj(k)}catch(e){continue}
-      for(const m of [d,pay,b.slice(0,4+len)]){
-        try{if(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},ck,sg,m)){res.status='ok';res.key=k;return res}}catch(e){}
-      }
-    }
+function mmWords(n){
+  const D='၀၁၂၃၄၅၆၇၈၉';
+  const num=x=>String(x).replace(/\d/g,c=>D[c]);
+  const p=[];
+  for(const [v,w] of [[1e6,'သန်း'],[1e5,'သိန်း'],[1e4,'သောင်း'],[1e3,'ထောင်'],[100,'ရာ'],[10,'ဆယ်']]){
+    const q=Math.floor(n/v);
+    if(q>0){p.push(num(q)+' '+w);n-=q*v}
   }
-  res.status='bad';res.tried=keys.length;
-  return res;
+  if(n>0||!p.length)p.push(num(n));
+  return p.join(' ')+' ကျပ်';
 }
-async function verify(text){
-  const sv=await verifySV2(text);
-  if(sv)return sv;
-  const cands=parse(text,0);
-  const res={status:'',key:null,content:pretty(text)};
-  if(!cands.length){res.status='nosig';return res}
-  res.content=cands[0].content;
-  if(!keys.length){res.status='nokeys';return res}
+const fmt=n=>Number(n).toLocaleString('en-US');
+
+function pemToDer(pem){
+  const body=pem.replace(/-----[^-]+-----/g,'').replace(/\s+/g,'');
+  return strictB64(body);
+}
+async function importPub(der){
+  const alg={name:'ECDSA',namedCurve:'P-256'};
+  if(der.length===65&&der[0]===4)return crypto.subtle.importKey('raw',der,alg,true,['verify']);
+  return crypto.subtle.importKey('spki',der,alg,true,['verify']);
+}
+async function fingerprint(der){
+  const h=new Uint8Array(await crypto.subtle.digest('SHA-256',der));
+  return Array.from(h.slice(0,8),x=>x.toString(16).padStart(2,'0').toUpperCase()).join(':');
+}
+async function keyObj(k){
+  if(cache.has(k.id))return cache.get(k.id);
+  const ck=await importPub(pemToDer(k.pem));
+  cache.set(k.id,ck);
+  return ck;
+}
+function toPem(der){
+  let s='';for(const x of der)s+=String.fromCharCode(x);
+  return '-----BEGIN PUBLIC KEY-----\n'+btoa(s).match(/.{1,64}/g).join('\n')+'\n-----END PUBLIC KEY-----';
+}
+async function addKeyFrom(name,pem){
+  const der0=pemToDer(pem);
+  if(!der0)throw new Error('Could not read key. Paste a PEM or Base64 public key.');
+  let ck;
+  try{ck=await importPub(der0)}catch(e){throw new Error('Not a valid ECDSA P-256 public key.')}
+  let spki=der0;
+  if(der0.length===65)spki=new Uint8Array(await crypto.subtle.exportKey('spki',ck));
+  const pemNorm=toPem(spki);
+  if(keys.some(k=>k.pem===pemNorm))throw new Error('This key is already stored.');
+  const k={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name:name||('Key '+(keys.length+1)),pem:pemNorm,fp:await fingerprint(spki),added:new Date().toISOString()};
+  keys.push(k);cache.set(k.id,ck);saveKeys();
+  return k;
+}
+function renderKeys(){
+  $('kc').textContent='('+keys.length+')';
+  const box=$('keyList');box.textContent='';
+  if(!keys.length){box.append(el('div','empty','No public keys stored yet.'));return}
+  keys.forEach(k=>{
+    const d=el('div','key'),t=el('div','t');
+    const x=el('button','b d','Delete');
+    x.onclick=()=>{if(confirm('Delete "'+k.name+'"?')){keys=keys.filter(z=>z.id!==k.id);cache.delete(k.id);saveKeys();renderKeys()}};
+    t.append(el('b','',k.name),x);
+    const det=el('details');
+    det.append(el('summary','','Show PEM'),el('pre','',k.pem));
+    d.append(t,el('div','fp',k.fp),det);
+    box.append(d);
+  });
+}
+
+async function matchKey(sig,msgs,hashes){
   for(const k of keys){
     let ck;
     try{ck=await keyObj(k)}catch(e){continue}
-    for(const c of cands){
-      for(const m of c.msgs){
-        for(const h of ['SHA-256','SHA-384','SHA-512']){
-          try{
-            const ok=await crypto.subtle.verify({name:'ECDSA',hash:h},ck,c.sig,m);
-            if(ok){res.status='ok';res.key=k;res.content=c.content;return res}
-          }catch(e){}
-        }
-      }
+    for(const m of msgs)for(const h of hashes){
+      try{if(await crypto.subtle.verify({name:'ECDSA',hash:h},ck,sig,m))return k}catch(e){}
     }
-  }
-  res.status='bad';
-  res.tried=keys.length;
-  return res;
-}
-
-function showResult(text,r){
-  const el=$('res');
-  el.style.display='block';
-  const map={
-    ok:['ok','✔ AUTHENTIC','Signature verified with stored public key “'+(r.key&&r.key.name)+'”.'],
-    bad:['bad','✘ NOT AUTHENTIC','The signature does not match any stored public key. The content may be forged or altered.'],
-    nosig:['bad','✘ NOT AUTHENTIC','No recognizable ECDSA signature was found in this QR code.'],
-    nokeys:['warn','⚠ CANNOT VERIFY','No public keys stored. Add the issuer public key in the Public Keys tab.']
-  };
-  const m=map[r.status];
-  el.className='res '+m[0];el.style.display='block';
-  $('resTitle').textContent=m[1];
-  $('resSub').textContent=m[2]+(r.tried?' Tried '+r.tried+' stored key(s).':'');
-  $('detail').classList.remove('hid');
-  $('content').textContent=r.content;
-  $('matched').textContent=r.key?(r.key.name+'\n'+r.key.fp):'None';
-  $('raw').textContent=text;
-  el.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-async function handle(text){
-  $('scanMsg').textContent='QR detected. Verifying…';
-  try{showResult(text,await verify(text));$('scanMsg').textContent='Done.'}
-  catch(e){$('scanMsg').textContent='Verification error: '+e.message}
-}
-
-const cv=$('cv'),cx=cv.getContext('2d',{willReadFrequently:true});
-let bd=null;
-try{if('BarcodeDetector' in window)bd=new BarcodeDetector({formats:['qr_code']})}catch(e){bd=null}
-async function detect(){
-  if(bd){try{const r=await bd.detect(cv);if(r.length&&r[0].rawValue)return r[0].rawValue}catch(e){}}
-  if(window.jsQR){
-    const img=cx.getImageData(0,0,cv.width,cv.height);
-    const r=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-    if(r&&r.data)return r.data;
   }
   return null;
 }
-async function decodeImage(src){
-  const img=new Image();
-  await new Promise((ok,no)=>{img.onload=ok;img.onerror=()=>no(new Error('Image could not be loaded'));img.src=src});
-  for(const max of [1600,1000,600,2400]){
-    const sc=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
-    cv.width=Math.max(1,Math.round(img.naturalWidth*sc));
-    cv.height=Math.max(1,Math.round(img.naturalHeight*sc));
-    cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
-    cx.drawImage(img,0,0,cv.width,cv.height);
-    const r=await detect();
-    if(r)return r;
+async function analyzeSV(t){
+  const r={kind:'receipt',status:'bad',key:null,raw:t,receipt:null,dump:'',note:''};
+  const b=b45(t.replace(/^SV\d+:/,''));
+  if(!b||b.length<70){r.note='The QR payload is damaged or incomplete.';return r}
+  const len=(b[2]<<8)|b[3];
+  if(4+len+60>b.length){r.note='The QR payload is damaged or incomplete.';return r}
+  const pay=b.slice(4,4+len);
+  const sig=b.slice(4+len);
+  let d=pay;
+  if(b[1]&1){try{d=await inflateRaw(pay)}catch(e){r.note='The receipt data could not be unpacked.';return r}}
+  try{r.receipt=parseReceipt(d)}catch(e){r.dump=mm(d).replace(/[\x00-\x1f]/g,'·')}
+  if(!keys.length){r.status='nokeys';return r}
+  const sg=sig.length===64?sig:derToRaw(sig);
+  if(sg){
+    const k=await matchKey(sg,[d,pay,b.slice(0,4+len)],['SHA-256']);
+    if(k){r.status='ok';r.key=k;return r}
+  }
+  r.tried=keys.length;
+  return r;
+}
+async function analyze(text){
+  const t=text.trim();
+  if(/^SV\d+:/.test(t))return analyzeSV(t);
+  const r={kind:'text',status:'nosig',key:null,raw:t,dump:pretty(t)};
+  const cands=parseGeneric(t);
+  if(!cands.length)return r;
+  r.dump=cands[0].content;
+  if(!keys.length){r.status='nokeys';return r}
+  r.status='bad';r.tried=keys.length;
+  for(const c of cands){
+    const k=await matchKey(c.sig,c.msgs,['SHA-256','SHA-384','SHA-512']);
+    if(k){r.status='ok';r.key=k;r.dump=c.content;return r}
+  }
+  return r;
+}
+
+function row(l,v,c){const r=el('div','rw '+(c||''));r.append(el('span','l',l),el('span','v',v));return r}
+function buildReceipt(rc,trusted){
+  const c=el('div','rc'+(trusted?'':' un'));
+  c.append(row('Invoice No:',rc.inv),row('Date:',rc.date),el('hr'),el('div','sec','ပစ္စည်းစာရင်း'));
+  rc.items.forEach((it,i)=>{
+    const t=el('div','rw it');
+    t.append(el('span','nm',(i+1)+'. '+it.name),el('b','',fmt(it.price)+' ကျပ်'));
+    c.append(t,el('div','sub',it.detail+' × '+fmt(it.price)+' ကျပ်'+(it.q>1?' × '+it.q:'')));
+  });
+  if(rc.extras.length){
+    const b=el('div','box');
+    b.append(el('div','bt','အသေးစိတ် တွက်ချက်မှုအချက်အလက် ('+(trusted?'QR Verified':'QR Unverified')+')'));
+    rc.extras.forEach(x=>b.append(row(x[0]+' (QR Only):',x[1])));
+    c.append(b);
+  }
+  c.append(el('hr'),row('စုစုပေါင်း ကျသင့်ငွေ',fmt(rc.total)+' ကျပ်','big'),el('div','words',mmWords(rc.total)));
+  return c;
+}
+function showResult(r){
+  const out=$('out');out.textContent='';
+  const nm=r.key?r.key.name:'';
+  const S={
+    ok:['ok','✔','AUTHENTIC','Genuine and unaltered. Verified with key “'+nm+'” ('+(r.key&&r.key.fp)+').'],
+    bad:['bad','✘','NOT AUTHENTIC','Tampered, or signed by a key that is not stored here. '+(r.tried?'Checked '+r.tried+' stored key(s). ':'')+(r.note||'')+' Do not trust the content below.'],
+    nosig:['bad','✘','NOT AUTHENTIC','No supported signature was found in this QR code.'],
+    nokeys:['warn','!','CANNOT VERIFY','No public key is stored yet. Add the issuer public key in the Public Keys tab, then scan again.']
+  }[r.status];
+  const ban=el('div','ban '+S[0]);
+  const tx=el('div');tx.append(el('h2','',S[2]),el('p','',S[3]));
+  ban.append(el('div','ic',S[1]),tx);
+  out.append(ban);
+  if(r.status==='nokeys'){const g=el('button','b o','Go to Public Keys');g.style.cssText='width:100%;margin-bottom:12px';g.onclick=()=>openTab('keys');out.append(g)}
+  const trusted=r.status==='ok';
+  if(r.receipt)out.append(buildReceipt(r.receipt,trusted));
+  else if(r.dump){const c=el('div','rc'+(trusted?'':' un'));c.append(el('div','lbl','Decoded content'),el('pre','',r.dump));out.append(c)}
+  const det=el('details');
+  det.append(el('summary','','Technical details'),el('div','lbl','Signed by'),el('pre','',r.key?(r.key.name+'\n'+r.key.pem+'\n'+r.key.fp):'No matching key'),el('div','lbl','Raw QR text'),el('pre','',r.raw));
+  out.append(det);
+  out.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function msg(t){$('scanMsg').textContent=t}
+async function handle(text){
+  msg('QR found. Verifying…');
+  try{showResult(await analyze(text));msg('Done.')}
+  catch(e){msg('Verification error: '+e.message)}
+}
+
+const cv=document.createElement('canvas');
+const cx=cv.getContext('2d',{willReadFrequently:true});
+let bd=null;
+try{if('BarcodeDetector' in window)bd=new BarcodeDetector({formats:['qr_code']})}catch(e){}
+async function detectCv(){
+  if(bd){try{const r=await bd.detect(cv);for(const x of r)if(x.rawValue)return x.rawValue}catch(e){}}
+  if(window.jsQR){
+    const im=cx.getImageData(0,0,cv.width,cv.height);
+    const r=jsQR(im.data,im.width,im.height,{inversionAttempts:'attemptBoth'});
+    if(r&&r.data)return r.data;
+  }
+  return zx();
+}
+let zxr=null,zxh=null;
+function zx(){
+  if(!window.ZXing)return null;
+  try{
+    if(!zxr){
+      zxr=new ZXing.QRCodeReader();
+      zxh=new Map();
+      zxh.set(ZXing.DecodeHintType.TRY_HARDER,true);
+      zxh.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.QR_CODE]);
+    }
+    const w=cv.width,h=cv.height,d=cx.getImageData(0,0,w,h).data,l=new Uint8ClampedArray(w*h);
+    for(let i=0;i<l.length;i++)l[i]=(d[i*4]*77+d[i*4+1]*150+d[i*4+2]*29)>>8;
+    const s=new ZXing.RGBLuminanceSource(l,w,h);
+    const tries=[()=>new ZXing.HybridBinarizer(s),()=>new ZXing.GlobalHistogramBinarizer(s),()=>new ZXing.HybridBinarizer(s.invert())];
+    for(const t of tries){
+      try{const r=zxr.decode(new ZXing.BinaryBitmap(t()),zxh);if(r&&r.getText())return r.getText()}catch(e){}
+    }
+  }catch(e){}
+  return null;
+}
+function filt(mode){
+  if(!mode)return;
+  const w=cv.width,h=cv.height,n=w*h;
+  const im=cx.getImageData(0,0,w,h),d=im.data,g=new Uint8Array(n);
+  for(let i=0;i<n;i++)g[i]=(d[i*4]*77+d[i*4+1]*150+d[i*4+2]*29)>>8;
+  const o=new Uint8Array(n);
+  if(mode===1||mode===2){
+    const hs=new Uint32Array(256);
+    for(let i=0;i<n;i++)hs[g[i]]++;
+    if(mode===1){
+      let a=0,lo=0,hi=255;
+      while(lo<255&&a<n*.01)a+=hs[lo++];
+      a=0;while(hi>0&&a<n*.01)a+=hs[hi--];
+      const s=255/Math.max(1,hi-lo);
+      for(let i=0;i<n;i++)o[i]=Math.max(0,Math.min(255,(g[i]-lo)*s));
+    }else{
+      let sum=0;for(let i=0;i<256;i++)sum+=i*hs[i];
+      let wb=0,sb=0,best=0,th=127;
+      for(let t=0;t<256;t++){
+        wb+=hs[t];if(!wb)continue;
+        const wf=n-wb;if(!wf)break;
+        sb+=t*hs[t];
+        const mb=sb/wb,mf=(sum-sb)/wf,v=wb*wf*(mb-mf)*(mb-mf);
+        if(v>best){best=v;th=t}
+      }
+      for(let i=0;i<n;i++)o[i]=g[i]>th?255:0;
+    }
+  }else{
+    const W=w+1,I=new Uint32Array(W*(h+1));
+    for(let y=0;y<h;y++){let rs=0;for(let x=0;x<w;x++){rs+=g[y*w+x];I[(y+1)*W+x+1]=I[y*W+x+1]+rs}}
+    const r=Math.max(6,Math.round(Math.min(w,h)/14));
+    for(let y=0;y<h;y++){
+      const y0=Math.max(0,y-r),y1=Math.min(h,y+r+1);
+      for(let x=0;x<w;x++){
+        const x0=Math.max(0,x-r),x1=Math.min(w,x+r+1);
+        const s=I[y1*W+x1]-I[y0*W+x1]-I[y1*W+x0]+I[y0*W+x0];
+        o[y*w+x]=g[y*w+x]*((x1-x0)*(y1-y0))<s*.88?0:255;
+      }
+    }
+  }
+  for(let i=0;i<n;i++){d[i*4]=d[i*4+1]=d[i*4+2]=o[i];d[i*4+3]=255}
+  cx.putImageData(im,0,0);
+}
+function render(src,x,y,w,h,target,mode){
+  const sc=Math.min(3,Math.max(.2,target/Math.max(w,h)));
+  cv.width=Math.max(16,Math.round(w*sc));cv.height=Math.max(16,Math.round(h*sc));
+  cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';
+  cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
+  cx.drawImage(src,x,y,w,h,0,0,cv.width,cv.height);
+  filt(mode);
+}
+function axis(len,s){
+  const st=Math.max(1,Math.round(s*.5)),a=[];
+  for(let p=0;;p+=st){const q=Math.min(p,len-s);a.push(q);if(q>=len-s)break}
+  return a;
+}
+async function scanSource(src,W,H){
+  const regs=[[0,0,W,H]],seen=new Set(['0,0,'+W+','+H]);
+  const m=Math.min(W,H);
+  for(const f of [.9,.65,.45]){
+    const s=Math.max(60,Math.round(m*f));
+    for(const y of axis(H,s))for(const x of axis(W,s)){
+      const k=x+','+y+','+s;
+      if(!seen.has(k)&&s<=W&&s<=H){seen.add(k);regs.push([x,y,s,s])}
+    }
+  }
+  const list=regs.slice(0,40);
+  const passes=[[900,0,1],[640,0,1],[420,0,1],[1300,0,1],[1800,0,1],[900,1,1],[900,3,1],[300,0,1],[900,0],[560,0],[900,1],[900,3],[560,2],[1300,0],[420,1]];
+  const total=passes.reduce((a,p)=>a+(p[2]?1:list.length),0),t0=Date.now();
+  let n=0;
+  for(const [tg,mode,fo] of passes){
+    for(const [x,y,w,h] of (fo?[list[0]]:list)){
+      if(Date.now()-t0>70000)return null;
+      render(src,x,y,w,h,tg,mode);
+      const r=await detectCv();
+      if(r)return r;
+      n++;
+      if(n%3===0){msg('Scanning image… '+Math.round(n/total*100)+'%');await new Promise(z=>setTimeout(z,0))}
+    }
   }
   return null;
 }
 async function fromFile(f){
-  if(!f)return;
-  $('scanMsg').textContent='Reading image…';
-  const url=URL.createObjectURL(f);
+  if(!f||busy)return;
+  busy=true;stopCam();
+  msg('Reading image…');
+  let url=null;
   try{
-    const t=await decodeImage(url);
-    if(t)await handle(t);else $('scanMsg').textContent='No QR code found in this image.';
-  }catch(e){$('scanMsg').textContent=e.message}
-  URL.revokeObjectURL(url);
+    url=URL.createObjectURL(f);
+    const pv=$('prev');pv.src=url;pv.classList.remove('hid');
+    let src=null;
+    try{src=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(e){}
+    if(!src)src=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error('This image file could not be opened.'));i.src=url});
+    const W=src.width||src.naturalWidth,H=src.height||src.naturalHeight;
+    const t=await scanSource(src,W,H);
+    if(t)await handle(t);
+    else msg('No readable QR code found in this '+W+'×'+H+' image (decoders: '+[bd?'native':'',window.jsQR?'jsQR':'',window.ZXing?'ZXing':''].filter(Boolean).join(', ')+'). Make the QR larger and sharper on screen, avoid glare, or paste the QR text under Verify pasted QR text.');
+  }catch(e){msg(e.message||'Could not read this image.')}
+  finally{busy=false}
 }
 
 async function startCam(){
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
-  }catch(e){
-    $('scanMsg').textContent='Camera unavailable: '+e.message+'. Use Upload Image instead.';
-    return;
-  }
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+  }catch(e){msg('Camera unavailable here ('+e.message+'). Use Take Photo or Upload Image.');return}
+  track=stream.getVideoTracks()[0];
+  try{await track.applyConstraints({advanced:[{focusMode:'continuous'}]})}catch(e){}
+  try{if(track.getCapabilities().torch)$('torch').classList.remove('hid')}catch(e){}
   const v=$('video');v.srcObject=stream;await v.play();
   $('vid').style.display='block';
   $('camBtn').textContent='Stop Camera';
-  $('scanMsg').textContent='Point the camera at a QR code.';
+  msg('Hold the QR steady inside the frame.');
   tick();
 }
 function stopCam(){
-  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;track=null}
+  torchOn=false;
   $('vid').style.display='none';
+  $('torch').classList.add('hid');
   $('camBtn').textContent='Start Camera';
 }
 async function tick(){
   if(!stream)return;
   const v=$('video');
-  if(v.readyState>=2&&v.videoWidth){
-    const sc=Math.min(1,900/Math.max(v.videoWidth,v.videoHeight));
-    cv.width=Math.round(v.videoWidth*sc);cv.height=Math.round(v.videoHeight*sc);
-    cx.drawImage(v,0,0,cv.width,cv.height);
-    const r=await detect();
+  if(v.readyState>=2&&v.videoWidth&&!busy){
+    const W=v.videoWidth,H=v.videoHeight,m=Math.min(W,H),k=(frame++)%3;
+    if(k===1)render(v,(W-m*.7)/2,(H-m*.7)/2,m*.7,m*.7,800,1);
+    else render(v,0,0,W,H,1000,k===2?3:0);
+    const r=await detectCv();
     if(r){stopCam();handle(r);return}
   }
-  setTimeout(tick,120);
+  setTimeout(tick,90);
 }
 
+function openTab(n){
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===n));
+  $('tab-scan').classList.toggle('hid',n!=='scan');
+  $('tab-keys').classList.toggle('hid',n!=='keys');
+  if(n!=='scan')stopCam();
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>openTab(b.dataset.tab));
 $('camBtn').onclick=()=>stream?stopCam():startCam();
-$('imgIn').onchange=async e=>{const f=e.target.files[0];try{await fromFile(f)}finally{e.target.value=''}};
+$('torch').onclick=async()=>{torchOn=!torchOn;try{await track.applyConstraints({advanced:[{torch:torchOn}]})}catch(e){}};
+for(const id of ['imgIn','camIn'])$(id).onchange=async e=>{const f=e.target.files[0];try{await fromFile(f)}finally{e.target.value=''}};
 $('manualBtn').onclick=()=>{const t=$('manual').value.trim();if(t)handle(t)};
 const drop=$('drop');
-['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('h')}));
-['dragleave','drop'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove('h')}));
+['dragenter','dragover'].forEach(n=>drop.addEventListener(n,()=>drop.classList.add('h')));
+['dragleave','drop'].forEach(n=>drop.addEventListener(n,()=>drop.classList.remove('h')));
 ['dragover','drop'].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));
 document.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)fromFile(f)});
 document.addEventListener('paste',e=>{
   const items=e.clipboardData&&e.clipboardData.items;
   if(!items)return;
   for(const it of items){if(it.type.startsWith('image/')){fromFile(it.getAsFile());break}}
-});
-
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
-  $('tab-scan').classList.toggle('hid',b.dataset.tab!=='scan');
-  $('tab-keys').classList.toggle('hid',b.dataset.tab!=='keys');
-  if(b.dataset.tab!=='scan')stopCam();
 });
 
 function note(id,t,bad){const e=$(id);e.textContent=t;e.style.color=bad?'var(--bad)':'var(--ok)'}
@@ -536,7 +648,8 @@ $('addKey').onclick=async()=>{
 $('pemFile').onchange=async e=>{
   const f=e.target.files[0];
   if(!f)return;
-  $('kpem').value=await f.text();e.target.value='';
+  const t=await f.text();e.target.value='';
+  $('kpem').value=t;
   if(!$('kname').value)$('kname').value=f.name.replace(/\.[^.]+$/,'');
 };
 $('expBtn').onclick=()=>{
@@ -562,9 +675,7 @@ async function importText(t){
   const arr=Array.isArray(j)?j:j.keys;
   if(!Array.isArray(arr))throw new Error('No keys found in backup.');
   let n=0,skip=0;
-  for(const k of arr){
-    try{await addKeyFrom(k.name,k.pem||k.key||'');n++}catch(e){skip++}
-  }
+  for(const k of arr){try{await addKeyFrom(k.name,k.pem||k.key||'');n++}catch(e){skip++}}
   renderKeys();
   note('expMsg','Imported '+n+' key(s), skipped '+skip+' (duplicate or invalid).',n===0&&skip>0);
 }
@@ -572,12 +683,14 @@ $('impBtn').onclick=async()=>{try{await importText($('exp').value)}catch(e){note
 $('jsonFile').onchange=async e=>{
   const f=e.target.files[0];
   if(!f)return;
-  const t=await f.text();e.target.value='';$('exp').value=t;
+  const t=await f.text();e.target.value='';
+  $('exp').value=t;
   try{await importText(t)}catch(err){note('expMsg',err.message,true)}
 };
 
 renderKeys();
-if(!window.crypto||!crypto.subtle)$('scanMsg').textContent='Secure context required for signature verification.';
+if(!window.crypto||!crypto.subtle)msg('A secure (https) page is required for signature verification.');
+else if(!window.jsQR&&!bd)msg('QR library failed to load. Check your connection.');
 </script>
 </body>
 </html>
